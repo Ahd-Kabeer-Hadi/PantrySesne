@@ -8,6 +8,9 @@ node_modules/
 dist/
 web-build/
 expo-env.d.ts
+android
+ios
+.vscode
 
 # Native
 .kotlin/
@@ -32,8 +35,48 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env
 
 # typescript
 *.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# EAS
+.easignore
+
+# Temporary folders
+tmp/
+temp/
 
 app-example
