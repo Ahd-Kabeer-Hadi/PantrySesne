@@ -4,18 +4,19 @@ import { View, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedContainer, ThemedCard, ThemedText, ThemedButton, ThemedInput } from "../components/ThemedComponents";
 
-interface WifiCredentialsScreenProps {
+interface MotherHubWifiSetupScreenProps {
   onSubmit: (ssid: string, password: string) => void;
   loading: boolean;
 }
 
-export default function WifiCredentialsScreen({ onSubmit, loading }: WifiCredentialsScreenProps) {
+export default function MotherHubWifiSetupScreen({ onSubmit, loading }: MotherHubWifiSetupScreenProps) {
   const [ssid, setSsid] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = () => {
     if (ssid.trim() && password.trim()) {
+    
       onSubmit(ssid.trim(), password);
     }
   };
@@ -112,18 +113,19 @@ export default function WifiCredentialsScreen({ onSubmit, loading }: WifiCredent
                 size="lg"
                 onPress={handleSubmit}
                 disabled={loading || !ssid.trim() || !password.trim()}
-                className="shadow-lg"
+                className={`shadow-lg ${loading ? 'opacity-75' : ''}`}
               >
                 <View className="flex-row items-center justify-center">
                   {loading ? (
                     <>
                       <View className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                      <ThemedText variant="inverse" weight="semibold">Connecting...</ThemedText>
+                      <ThemedText variant="inverse" weight="semibold">Connecting Mother Hub...</ThemedText>
                     </>
                   ) : (
                     <>
+                      <Ionicons name="wifi" size={20} color="#FFFFFF" className="mr-2" />
                       <ThemedText size="lg" weight="semibold" variant="inverse" className="mr-2">
-                        Connect Device
+                        Connect Mother Hub
                       </ThemedText>
                       <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
                     </>
@@ -132,7 +134,10 @@ export default function WifiCredentialsScreen({ onSubmit, loading }: WifiCredent
               </ThemedButton>
               
               <ThemedText size="sm" variant="tertiary" className="text-center">
-                This will connect your device to your WiFi network
+                {loading 
+                  ? "Setting up your mother hub connection..." 
+                  : "This will connect your mother hub to your WiFi network"
+                }
               </ThemedText>
             </View>
           </View>

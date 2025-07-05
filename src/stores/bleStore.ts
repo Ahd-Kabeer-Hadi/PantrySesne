@@ -1,9 +1,9 @@
-import { Device } from 'react-native-ble-plx';
-import { MMKV } from 'react-native-mmkv';
-import { create } from 'zustand';
-import { getLastSSID, getProvisionedDevices, saveLastSSID, saveProvisionedDevice } from '../services/storage';
+import { create } from "zustand";
+import { MMKV } from "react-native-mmkv";
+import { Device } from "react-native-ble-plx";
 
 const storage = new MMKV();
+
 const ONBOARDED_KEY = 'onboarded';
 
 interface ProvisioningDevice {
@@ -57,6 +57,29 @@ interface BLEState {
   setOnboarded: (value: boolean) => void;
   persistOnboardingComplete: () => void;
 }
+
+// Helper functions for persistence
+const getProvisionedDevices = (): { id: string; name: string }[] => {
+  const devices = storage.getString('provisionedDevices');
+  return devices ? JSON.parse(devices) : [];
+};
+
+const saveProvisionedDevice = (device: { id: string; name: string }) => {
+  const devices = getProvisionedDevices();
+  const exists = devices.find(d => d.id === device.id);
+  if (!exists) {
+    devices.push(device);
+    storage.set('provisionedDevices', JSON.stringify(devices));
+  }
+};
+
+const getLastSSID = (): string => {
+  return storage.getString('lastSSID') || '';
+};
+
+const saveLastSSID = (ssid: string) => {
+  storage.set('lastSSID', ssid);
+};
 
 export const useBLEStore = create<BLEState>((set, get) => ({
   // Provisioning devices

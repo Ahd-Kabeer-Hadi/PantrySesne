@@ -11,19 +11,19 @@ interface BLEDevice {
   isConnectable: boolean;
 }
 
-interface ScanMotherScreenProps {
+interface MotherHubDiscoveryScreenProps {
   devices: BLEDevice[];
   scanning: boolean;
   onRefresh: () => void;
   onSelect: (device: BLEDevice) => void;
 }
 
-export default function ScanMotherScreen({ 
+export default function MotherHubDiscoveryScreen({ 
   devices, 
   scanning, 
   onRefresh, 
   onSelect 
-}: ScanMotherScreenProps) {
+}: MotherHubDiscoveryScreenProps) {
   
   // Component-level state for user feedback
   const [isScanning, setIsScanning] = useState(false);

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useBLE } from "../../hooks/useBLE";
 import ErrorDisplay from "../../components/ErrorDisplay";
-import ProvisioningScreen from "../../screens/ProvisioningScreen";
-import ScanMotherScreen from "../../screens/ScanMotherScreen";
+import MotherHubSetupScreen from "../../screens/MotherHubSetupScreen";
+import MotherHubDiscoveryScreen from "../../screens/MotherHubDiscoveryScreen";
 import WelcomeScreen from "../../screens/WelcomeScreen";
-import WifiCredentialsScreen from "../../screens/WifiCredentialsScreen";
+import MotherHubWifiSetupScreen from "../../screens/MotherHubWifiSetupScreen";
 import { useBLEStore } from "../../stores/bleStore";
 import { parseError } from "../../utils/errorHandler";
 
@@ -21,7 +21,7 @@ export default function OnboardingFlow() {
 
   const {
     // Provisioning devices (SmartPotMaster)
-    provisioningDevices,
+    provisioningDevices: bleProvisioningDevices,
     scanForProvisioningDevices,
     connectToProvisioningDevice,
     connectedProvisioningDevice,
@@ -67,8 +67,8 @@ export default function OnboardingFlow() {
             compact
           />
         )}
-        <ScanMotherScreen
-          devices={provisioningDevices.map(d => ({ 
+        <MotherHubDiscoveryScreen
+          devices={bleProvisioningDevices.map((d: any) => ({ 
             id: d.id, 
             name: d.name,
             rssi: d.device.rssi || -70,
@@ -77,7 +77,7 @@ export default function OnboardingFlow() {
           scanning={false}
           onRefresh={scanForProvisioningDevices}
           onSelect={async (deviceInfo) => {
-            const provisioningDevice = provisioningDevices.find(d => d.id === deviceInfo.id);
+            const provisioningDevice = bleProvisioningDevices.find((d: any) => d.id === deviceInfo.id);
             if (!provisioningDevice) return;
             
             setSelectedDevice(provisioningDevice);
@@ -110,20 +110,21 @@ export default function OnboardingFlow() {
             compact
           />
         )}
-        <WifiCredentialsScreen
+        <MotherHubWifiSetupScreen
           onSubmit={async (ssid, password) => {
             setWifiLoading(true);
             setProvisionStatus("connecting");
             
-            const ok = await provisionWiFi(ssid, password);
+            // TEMPORARY: Randomize success/failure for testing
+            await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate delay
+            const randomSuccess = Math.random() > 0.3; // 70% success rate
+            
+            const ok = randomSuccess; // Use random instead of actual provisionWiFi
             setWifiLoading(false);
             setStep("provisioning");
             setProvisionStatus(ok ? "success" : "error");
             
-            // On success, persist onboarding completion
-            if (ok) {
-              persistOnboardingComplete();
-            }
+            // Don't persist onboarding completion here - wait for user to click "Continue"
           }}
           loading={wifiLoading || provisioning === "pending"}
         />
@@ -133,14 +134,29 @@ export default function OnboardingFlow() {
   
   if (step === "provisioning") {
     return (
-      <ProvisioningScreen
+      <MotherHubSetupScreen
         status={provisionStatus}
         onRetry={() => {
           setProvisionStatus("connecting");
           setStep("wifi");
         }}
+        onAddContainers={() => {
+          // TODO: Navigate to container pairing flow
+          console.log('🔧 TODO: Navigate to container pairing flow');
+          // For now, just go to dashboard
+          if (provisionStatus === "success") {
+            persistOnboardingComplete();
+          }
+        }}
         onDone={async () => {
-          setStep("welcome");
+          // Only persist onboarding completion on success
+          if (provisionStatus === "success") {
+            persistOnboardingComplete();
+            // Don't set step - let routing logic handle redirect to dashboard
+          } else {
+            // On error, go back to welcome
+            setStep("welcome");
+          }
           setSelectedDevice(null);
           await disconnect();
         }}

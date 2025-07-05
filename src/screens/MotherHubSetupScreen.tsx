@@ -4,23 +4,29 @@ import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedContainer, ThemedCard, ThemedText, ThemedButton } from "../components/ThemedComponents";
 
-interface ProvisioningScreenProps {
+interface MotherHubSetupScreenProps {
   status: "connecting" | "success" | "error";
   onRetry: () => void;
   onDone: () => void;
+  onAddContainers?: () => void;
 }
 
-export default function ProvisioningScreen({ status, onRetry, onDone }: ProvisioningScreenProps) {
+export default function MotherHubSetupScreen({ 
+  status, 
+  onRetry, 
+  onDone, 
+  onAddContainers 
+}: MotherHubSetupScreenProps) {
   const renderConnectingState = () => (
     <View className="flex-1 justify-center items-center py-12">
       <View className="w-32 h-32 bg-primary/20 rounded-3xl items-center justify-center mb-8">
         <View className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
       </View>
       <ThemedText size="2xl" weight="bold" className="text-center mb-4">
-        Connecting Device
+        Connecting Mother Hub
       </ThemedText>
       <ThemedText variant="secondary" className="text-center leading-relaxed max-w-sm mb-8">
-        Please wait while we connect your device to WiFi and set up the connection.
+        Please wait while we connect your SmartPot Master to WiFi and set up the connection.
       </ThemedText>
       
       {/* Progress Steps */}
@@ -30,7 +36,7 @@ export default function ProvisioningScreen({ status, onRetry, onDone }: Provisio
             <Ionicons name="checkmark" size={16} color="#FFFFFF" />
           </View>
           <ThemedText variant="secondary" className="flex-1">
-            Device discovered
+            Mother hub discovered
           </ThemedText>
         </View>
         
@@ -57,15 +63,7 @@ export default function ProvisioningScreen({ status, onRetry, onDone }: Provisio
 
   const renderSuccessState = () => (
     <View className="flex-1 justify-center items-center py-12">
-      <View className="w-32 h-32 bg-success/20 rounded-3xl items-center justify-center mb-8">
-        <Ionicons name="checkmark-circle" size={64} color="#8fb716" />
-      </View>
-      <ThemedText size="2xl" weight="bold" className="text-center mb-4">
-        Successfully Connected!
-      </ThemedText>
-      <ThemedText variant="secondary" className="text-center leading-relaxed max-w-sm mb-8">
-        Your device is now connected to WiFi and ready to monitor your pantry.
-      </ThemedText>
+      
       
       {/* Success Details */}
       <ThemedCard variant="elevated" className="p-6 mb-8">
@@ -73,95 +71,106 @@ export default function ProvisioningScreen({ status, onRetry, onDone }: Provisio
           <Ionicons name="checkmark-circle" size={24} color="#8fb716" className="mr-3" />
           <ThemedText size="lg" weight="semibold" variant="success">WiFi Connected</ThemedText>
         </View>
-        <ThemedText size="sm" variant="secondary">
-          Your device can now communicate with the cloud and send you smart alerts.
-        </ThemedText>
-      </ThemedCard>
-      
-      <ThemedButton
-        variant="success"
-        size="lg"
-        onPress={onDone}
-        className="shadow-lg"
-      >
-        <View className="flex-row items-center justify-center">
-          <ThemedText size="lg" weight="semibold" variant="inverse" className="mr-2">
-            Continue to Dashboard
+        
+        <View className="bg-primary/10 rounded-lg p-3">
+          <ThemedText size="sm" weight="medium" variant="primary" className="mb-1">
+            Next Step: Container Pairing
           </ThemedText>
-          <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-        </View>
-      </ThemedButton>
-    </View>
-  );
-
-  const renderErrorState = () => (
-    <View className="flex-1 justify-center items-center py-12">
-      <View className="w-32 h-32 bg-error/20 rounded-3xl items-center justify-center mb-8">
-        <Ionicons name="close-circle" size={64} color="#dc2626" />
-      </View>
-      <ThemedText size="2xl" weight="bold" className="text-center mb-4">
-        Connection Failed
-      </ThemedText>
-      <ThemedText variant="secondary" className="text-center leading-relaxed max-w-sm mb-8">
-        We couldn't connect your device to WiFi. This might be due to incorrect credentials or network issues.
-      </ThemedText>
-      
-      {/* Error Details */}
-      <ThemedCard variant="elevated" className="p-6 mb-8">
-        <View className="flex-row items-center mb-3">
-          <Ionicons name="warning" size={24} color="#dc2626" className="mr-3" />
-          <ThemedText size="lg" weight="semibold" variant="error">Connection Error</ThemedText>
-        </View>
-        <ThemedText size="sm" variant="secondary" className="mb-3">
-          Possible causes:
-        </ThemedText>
-        <View className="space-y-2">
-          <View className="flex-row items-start">
-            <View className="w-2 h-2 bg-error rounded-full mt-2 mr-3" />
-            <ThemedText size="sm" variant="secondary" className="flex-1">
-              Incorrect WiFi password
-            </ThemedText>
-          </View>
-          <View className="flex-row items-start">
-            <View className="w-2 h-2 bg-error rounded-full mt-2 mr-3" />
-            <ThemedText size="sm" variant="secondary" className="flex-1">
-              Network not in range
-            </ThemedText>
-          </View>
-          <View className="flex-row items-start">
-            <View className="w-2 h-2 bg-error rounded-full mt-2 mr-3" />
-            <ThemedText size="sm" variant="secondary" className="flex-1">
-              Device connection timeout
-            </ThemedText>
-          </View>
+          <ThemedText size="xs" variant="secondary">
+            Pair your smart containers with this mother hub for complete pantry monitoring.
+          </ThemedText>
         </View>
       </ThemedCard>
       
-      <View className="space-y-3 w-full">
+      {/* Two Options */}
+      <View className="space-y-3 w-full flex flex-col justify-end  gap-4 max-w-sm">
         <ThemedButton
           variant="primary"
           size="lg"
-          onPress={onRetry}
+          onPress={onAddContainers || onDone}
           className="shadow-lg"
         >
           <View className="flex-row items-center justify-center">
-            <Ionicons name="refresh" size={20} color="#FFFFFF" className="mr-2" />
+            <Ionicons name="add-circle" size={20} color="#FFFFFF" className="mr-2" />
             <ThemedText size="lg" weight="semibold" variant="inverse">
-              Try Again
+              Add Containers
             </ThemedText>
           </View>
         </ThemedButton>
         
         <ThemedButton
-          variant="ghost"
+          variant="secondary"
+          size="lg"
           onPress={onDone}
           className="shadow-lg"
         >
-          <ThemedText variant="primary" weight="semibold" className="text-center">
-            Skip for Now
-          </ThemedText>
+          <View className="flex-row items-center justify-center">
+            <Ionicons name="home" size={20} color="#8fb716" className="mr-2" />
+            <ThemedText size="lg" weight="semibold" variant="primary">
+              Go to Dashboard
+            </ThemedText>
+          </View>
         </ThemedButton>
+        
+        <ThemedText size="sm" variant="tertiary" className="text-center mt-4">
+          You can add containers later from the dashboard
+        </ThemedText>
       </View>
+    </View>
+  );
+
+  const renderErrorState = () => (
+    <View className="flex-1 justify-center items-center py-12">
+      <View className="w-32 h-32 bg-accent/20 rounded-3xl items-center justify-center mb-8">
+        <Ionicons name="wifi" size={64} color="#b8b8b8" />
+      </View>
+      <ThemedText size="2xl" weight="bold" className="text-center mb-4">
+        Connection Not Established
+      </ThemedText>
+      <ThemedText variant="secondary" className="text-center leading-relaxed max-w-sm mb-8">
+        We couldn't connect your mother hub to WiFi. Let's check your settings and try again.
+      </ThemedText>
+      
+      {/* Troubleshooting tips */}
+      <View className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-8 w-full max-w-sm">
+        <ThemedText size="sm" weight="semibold" className="mb-3 text-gray-800">
+          Troubleshooting Tips:
+        </ThemedText>
+        <View className="space-y-2">
+          <View className="flex-row items-start">
+            <View className="w-1.5 h-1.5 bg-gray-400 rounded-full mt-2 mr-3 flex-shrink-0" />
+            <ThemedText size="sm" variant="secondary" className="flex-1">
+              Double-check your WiFi password
+            </ThemedText>
+          </View>
+          <View className="flex-row items-start">
+            <View className="w-1.5 h-1.5 bg-gray-400 rounded-full mt-2 mr-3 flex-shrink-0" />
+            <ThemedText size="sm" variant="secondary" className="flex-1">
+              Make sure your WiFi network is in range
+            </ThemedText>
+          </View>
+          <View className="flex-row items-start">
+            <View className="w-1.5 h-1.5 bg-gray-400 rounded-full mt-2 mr-3 flex-shrink-0" />
+            <ThemedText size="sm" variant="secondary" className="flex-1">
+              Check that your mother hub is powered on
+            </ThemedText>
+          </View>
+        </View>
+      </View>
+      
+      <ThemedButton
+        variant="secondary"
+        size="lg"
+        onPress={onRetry}
+        className="shadow-lg"
+      >
+        <View className="flex-row items-center justify-center">
+          <Ionicons name="refresh" size={20} color="#0c0b0e" className="mr-2" />
+          <ThemedText size="lg" weight="semibold" variant="secondary">
+            Try Again
+          </ThemedText>
+        </View>
+      </ThemedButton>
     </View>
   );
 
@@ -173,24 +182,24 @@ export default function ProvisioningScreen({ status, onRetry, onDone }: Provisio
           <View className="items-center mb-8">
             <View className={`w-20 h-20 rounded-2xl shadow-lg mb-6 items-center justify-center ${
               status === "success" ? "bg-success" : 
-              status === "error" ? "bg-error" : "bg-primary"
+              status === "error" ? "bg-accent" : "bg-primary"
             }`}>
               <Ionicons 
                 name={
                   status === "success" ? "checkmark" : 
-                  status === "error" ? "close" : "wifi"
+                  status === "error" ? "wifi" : "wifi"
                 } 
                 size={36} 
                 color="#FFFFFF" 
               />
             </View>
             <ThemedText size="2xl" weight="bold" className="text-center mb-3">
-              {status === "success" ? "Setup Complete" : 
-               status === "error" ? "Setup Failed" : "Setting Up"}
+              {status === "success" ? "Mother Hub Ready" : 
+               status === "error" ? "Connection Issue" : "Connecting Mother Hub"}
             </ThemedText>
             <ThemedText variant="secondary" className="text-center max-w-xs">
-              {status === "success" ? "Your device is ready to use" : 
-               status === "error" ? "Let's try again" : "Connecting your device"}
+              {status === "success" ? "Your mother hub is connected and ready for containers" : 
+               status === "error" ? "Let's check your settings and try again" : "Setting up your mother hub connection"}
             </ThemedText>
           </View>
 
