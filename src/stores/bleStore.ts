@@ -6,17 +6,56 @@ import { getLastSSID, getProvisionedDevices, saveLastSSID, saveProvisionedDevice
 const storage = new MMKV();
 const ONBOARDED_KEY = 'onboarded';
 
+interface ProvisioningDevice {
+  id: string;
+  name: string;
+  device: Device;
+}
+
+interface SmartPot {
+  id: string;
+  name: string;
+  weight: string;
+  device: Device;
+  lastSeen: number;
+}
+
 interface BLEState {
-  devices: { id: string; name: string; device: Device }[];
-  connectedDevice: Device | null;
+  // Provisioning devices (SmartPotMaster for WiFi setup)
+  provisioningDevices: ProvisioningDevice[];
+  connectedProvisioningDevice: Device | null;
+  
+  // Smart Pots (SmartPot_01, SmartPot_02, etc.)
+  smartPots: SmartPot[];
+  connectedSmartPot: Device | null;
+  
+  // WiFi provisioning state
   provisioning: 'idle' | 'pending' | 'success' | 'error';
+  
+  // Scanning states
+  scanningProvisioning: boolean;
+  scanningSmartPots: boolean;
+  
+  // General state
   error: string | null;
   isOnboarded: boolean;
-  setDevices: (devices: { id: string; name: string; device: Device }[]) => void;
-  addDevice: (device: { id: string; name: string; device: Device }) => void;
-  setConnectedDevice: (device: Device | null) => void;
+  
+  // Actions
+  setProvisioningDevices: (devices: ProvisioningDevice[]) => void;
+  addProvisioningDevice: (device: ProvisioningDevice) => void;
+  setConnectedProvisioningDevice: (device: Device | null) => void;
+  
+  setSmartPots: (pots: SmartPot[]) => void;
+  addSmartPot: (pot: SmartPot) => void;
+  updateSmartPotWeight: (id: string, weight: string) => void;
+  setConnectedSmartPot: (device: Device | null) => void;
+  
   setProvisioning: (status: 'idle' | 'pending' | 'success' | 'error') => void;
+  setScanningProvisioning: (scanning: boolean) => void;
+  setScanningSmartPots: (scanning: boolean) => void;
   setError: (err: string | null) => void;
+  
+  // Persistence
   persistProvisionedDevice: (device: { id: string; name: string }) => void;
   getPersistedDevices: () => { id: string; name: string }[];
   persistLastSSID: (ssid: string) => void;
@@ -26,16 +65,51 @@ interface BLEState {
 }
 
 export const useBLEStore = create<BLEState>((set, get) => ({
-  devices: [],
-  connectedDevice: null,
+  // Provisioning devices
+  provisioningDevices: [],
+  connectedProvisioningDevice: null,
+  
+  // Smart Pots
+  smartPots: [],
+  connectedSmartPot: null,
+  
+  // WiFi provisioning
   provisioning: 'idle',
   error: null,
-  isOnboarded: storage.getBoolean(ONBOARDED_KEY) || false,
-  setDevices: (devices) => set({ devices }),
-  addDevice: (device) => set((state) => ({ devices: [...state.devices, device] })),
-  setConnectedDevice: (device) => set({ connectedDevice: device }),
+  
+  // Scanning states
+  scanningProvisioning: false,
+  scanningSmartPots: false,
+  
+  // Check if user has completed onboarding by looking at persisted devices
+  isOnboarded: getProvisionedDevices().length > 0,
+  
+  // Provisioning device actions
+  setProvisioningDevices: (devices) => set({ provisioningDevices: devices }),
+  addProvisioningDevice: (device) => set((state) => ({ 
+    provisioningDevices: [...state.provisioningDevices, device] 
+  })),
+  setConnectedProvisioningDevice: (device) => set({ connectedProvisioningDevice: device }),
+  
+  // Smart Pot actions
+  setSmartPots: (pots) => set({ smartPots: pots }),
+  addSmartPot: (pot) => set((state) => ({ 
+    smartPots: [...state.smartPots, pot] 
+  })),
+  updateSmartPotWeight: (id, weight) => set((state) => ({
+    smartPots: state.smartPots.map(pot => 
+      pot.id === id ? { ...pot, weight, lastSeen: Date.now() } : pot
+    )
+  })),
+  setConnectedSmartPot: (device) => set({ connectedSmartPot: device }),
+  
+  // General actions
   setProvisioning: (status) => set({ provisioning: status }),
+  setScanningProvisioning: (scanning) => set({ scanningProvisioning: scanning }),
+  setScanningSmartPots: (scanning) => set({ scanningSmartPots: scanning }),
   setError: (err) => set({ error: err }),
+  
+  // Persistence
   persistProvisionedDevice: (device) => saveProvisionedDevice(device),
   getPersistedDevices: () => getProvisionedDevices(),
   persistLastSSID: (ssid) => saveLastSSID(ssid),

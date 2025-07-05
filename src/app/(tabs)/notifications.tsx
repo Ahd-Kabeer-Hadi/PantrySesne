@@ -1,64 +1,75 @@
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
-import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { RefreshControl, ScrollView, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ThemedContainer, ThemedCard, ThemedText, ThemedButton } from "../../components/ThemedComponents";
 
 // Mock notifications data
 const mockNotifications = [
   {
-    id: "1",
+    id: 1,
     type: "low" as const,
-    title: "Sugar Jar Running Low",
-    message: "Your sugar jar is at 15g. Consider refilling soon.",
-    container: "Sugar Jar",
-    time: "5 minutes ago",
+    title: "Low Stock Alert",
+    message: "Rice is running low in Container A. Consider restocking soon.",
+    container: "Container A",
+    time: "2 min ago",
     read: false,
   },
   {
-    id: "2",
+    id: 2,
     type: "empty" as const,
-    title: "Flour Container Empty",
-    message: "Your flour container is completely empty. Time to restock!",
-    container: "Flour Container",
+    title: "Container Empty",
+    message: "Sugar container is completely empty. Please refill to continue monitoring.",
+    container: "Container B",
+    time: "15 min ago",
+    read: false,
+  },
+  {
+    id: 3,
+    type: "success" as const,
+    title: "Setup Complete",
+    message: "Your new smart container has been successfully configured and is now monitoring.",
+    container: "Container C",
     time: "1 hour ago",
     read: true,
   },
   {
-    id: "3",
+    id: 4,
     type: "info" as const,
-    title: "New Container Added",
-    message: "Coffee Container has been successfully added to your pantry.",
-    container: "Coffee Container",
+    title: "Weekly Summary",
+    message: "Your pantry usage summary for this week is ready. Check your dashboard for details.",
+    container: "All Containers",
     time: "2 hours ago",
     read: true,
   },
   {
-    id: "4",
-    type: "success" as const,
-    title: "WiFi Connected",
-    message: "Your Mother device is now connected to WiFi and ready to monitor.",
-    container: "System",
-    time: "1 day ago",
+    id: 5,
+    type: "low" as const,
+    title: "Low Stock Alert",
+    message: "Flour is running low in Container D. Consider restocking soon.",
+    container: "Container D",
+    time: "3 hours ago",
     read: true,
   },
 ];
 
 const getNotificationColor = (type: "low" | "empty" | "info" | "success") => {
   switch (type) {
-    case "low": return "#FFB344";
-    case "empty": return "#E36565";
-    case "info": return "#497174";
-    case "success": return "#7FC8A9";
+    case "low": return "#e4fa5b"; // Warning yellow
+    case "empty": return "#dc2626"; // Error red
+    case "info": return "#8fb716"; // Primary green
+    case "success": return "#8fb716"; // Success green
+    default: return "#b8b8b8"; // Accent gray
   }
 };
 
 const getNotificationIcon = (type: "low" | "empty" | "info" | "success") => {
   switch (type) {
-    case "low": return "warning";
-    case "empty": return "close-circle";
-    case "info": return "information-circle";
-    case "success": return "checkmark-circle";
+    case "low": return "warning" as const;
+    case "empty": return "close-circle" as const;
+    case "info": return "information-circle" as const;
+    case "success": return "checkmark-circle" as const;
+    default: return "notifications" as const;
   }
 };
 
@@ -81,17 +92,13 @@ export default function NotificationsScreen() {
     const icon = getNotificationIcon(notification.type);
 
     return (
-      <TouchableOpacity
+      <ThemedCard
         key={notification.id}
-        className={`bg-white/80 rounded-2xl p-4 mb-3 shadow-soft backdrop-blur-sm active:scale-95 transition-all duration-200 ${
+        variant="elevated"
+        className={`mb-3 ${
           !notification.read ? 'border-l-4' : ''
         }`}
         style={{
-          shadowColor: '#497174',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 8,
-          elevation: 4,
           borderLeftColor: !notification.read ? color : 'transparent',
         }}
       >
@@ -104,155 +111,148 @@ export default function NotificationsScreen() {
           </View>
           <View className="flex-1">
             <View className="flex-row items-center justify-between mb-1">
-              <Text className="text-base font-semibold text-foreground">
+              <ThemedText size="base" weight="semibold">
                 {notification.title}
-              </Text>
+              </ThemedText>
               {!notification.read && (
                 <View className="w-2 h-2 bg-primary rounded-full" />
               )}
             </View>
-            <Text className="text-sm text-muted-foreground mb-2 leading-relaxed">
+            <ThemedText size="sm" variant="secondary" className="mb-2 leading-relaxed">
               {notification.message}
-            </Text>
+            </ThemedText>
             <View className="flex-row items-center justify-between">
-              <Text className="text-xs text-muted-foreground">
+              <ThemedText size="xs" variant="secondary">
                 {notification.container}
-              </Text>
-              <Text className="text-xs text-muted-foreground">
+              </ThemedText>
+              <ThemedText size="xs" variant="secondary">
                 {notification.time}
-              </Text>
+              </ThemedText>
             </View>
           </View>
         </View>
-      </TouchableOpacity>
+      </ThemedCard>
     );
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      {/* Background Gradient */}
-      <LinearGradient
-        colors={['#F9FAFB', '#F0F7F8', '#D6E4E5']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        className="absolute inset-0"
-      />
-      
-      {/* Floating Background Elements */}
-      <View className="absolute inset-0 overflow-hidden">
-        <View className="absolute top-20 right-10 w-32 h-32 bg-primary/5 rounded-full blur-xl" />
-        <View className="absolute bottom-40 left-8 w-24 h-24 bg-accent/10 rounded-full blur-lg" />
-        <View className="absolute top-1/3 left-1/4 w-16 h-16 bg-success/8 rounded-full blur-md" />
-      </View>
-
-      <ScrollView 
-        className="flex-1 px-6 pt-8"
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        {/* Header */}
-        <View className="mb-8">
-          <View className="flex-row items-center justify-between mb-4">
-            <View>
-              <Text className="text-2xl font-bold text-foreground">
-                Notifications
-              </Text>
-              <Text className="text-base text-muted-foreground">
-                Stay updated on your pantry
-              </Text>
-            </View>
-            <TouchableOpacity className="w-12 h-12 bg-primary rounded-2xl items-center justify-center shadow-soft">
-              <Ionicons name="settings" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
-
-          {/* Filter Tabs */}
-          <View className="bg-white/80 rounded-2xl p-1 shadow-soft backdrop-blur-sm">
-            <View className="flex-row">
-              <TouchableOpacity
-                onPress={() => setShowRead(true)}
-                className={`flex-1 py-2 px-4 rounded-xl ${
-                  showRead ? 'bg-primary' : 'bg-transparent'
-                }`}
-              >
-                <Text className={`text-sm font-medium text-center ${
-                  showRead ? 'text-white' : 'text-muted-foreground'
-                }`}>
-                  All ({mockNotifications.length})
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setShowRead(false)}
-                className={`flex-1 py-2 px-4 rounded-xl ${
-                  !showRead ? 'bg-primary' : 'bg-transparent'
-                }`}
-              >
-                <Text className={`text-sm font-medium text-center ${
-                  !showRead ? 'text-white' : 'text-muted-foreground'
-                }`}>
-                  Unread ({mockNotifications.filter(n => !n.read).length})
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-
-        {/* Notifications List */}
-        <View className="mb-6">
-          {filteredNotifications.length > 0 ? (
-            filteredNotifications.map(renderNotification)
-          ) : (
-            <View className="flex-1 justify-center items-center py-12">
-              <View className="w-24 h-24 bg-muted/20 rounded-2xl items-center justify-center mb-6">
-                <Ionicons name="notifications-off" size={48} color="#5C5C5C" />
+    <SafeAreaView className="flex-1">
+      <ThemedContainer className="flex-1">
+        <ScrollView 
+          className="flex-1 px-6 pt-8"
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          {/* Header */}
+          <View className="mb-8">
+            <View className="flex-row items-center justify-between mb-4">
+              <View>
+                <ThemedText size="2xl" weight="bold">
+                  Notifications
+                </ThemedText>
+                <ThemedText variant="secondary">
+                  Stay updated on your pantry
+                </ThemedText>
               </View>
-              <Text className="text-lg font-semibold text-foreground text-center mb-2">
-                No notifications
-              </Text>
-              <Text className="text-base text-muted-foreground text-center leading-relaxed max-w-sm">
-                {showRead 
-                  ? "You're all caught up! Check back later for updates."
-                  : "No unread notifications at the moment."
-                }
-              </Text>
+              <TouchableOpacity className="w-12 h-12 bg-primary rounded-2xl items-center justify-center shadow-md">
+                <Ionicons name="settings" size={24} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Filter Tabs */}
+            <ThemedCard variant="elevated" className="p-1">
+              <View className="flex-row">
+                <TouchableOpacity
+                  onPress={() => setShowRead(true)}
+                  className={`flex-1 py-2 px-4 rounded-xl ${
+                    showRead ? 'bg-primary' : 'bg-transparent'
+                  }`}
+                >
+                  <ThemedText 
+                    size="sm" 
+                    weight="medium" 
+                    variant={showRead ? "inverse" : "secondary"}
+                    className="text-center"
+                  >
+                    All ({mockNotifications.length})
+                  </ThemedText>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setShowRead(false)}
+                  className={`flex-1 py-2 px-4 rounded-xl ${
+                    !showRead ? 'bg-primary' : 'bg-transparent'
+                  }`}
+                >
+                  <ThemedText 
+                    size="sm" 
+                    weight="medium" 
+                    variant={!showRead ? "inverse" : "secondary"}
+                    className="text-center"
+                  >
+                    Unread ({mockNotifications.filter(n => !n.read).length})
+                  </ThemedText>
+                </TouchableOpacity>
+              </View>
+            </ThemedCard>
+          </View>
+
+          {/* Notifications List */}
+          <View className="mb-6">
+            {filteredNotifications.length > 0 ? (
+              filteredNotifications.map(renderNotification)
+            ) : (
+              <View className="flex-1 justify-center items-center py-12">
+                <View className="w-24 h-24 bg-accent/20 rounded-2xl items-center justify-center mb-6">
+                  <Ionicons name="notifications-off" size={48} color="#b8b8b8" />
+                </View>
+                <ThemedText size="lg" weight="semibold" className="text-center mb-2">
+                  No notifications
+                </ThemedText>
+                <ThemedText variant="secondary" className="text-center leading-relaxed max-w-sm">
+                  {showRead 
+                    ? "You're all caught up! Check back later for updates."
+                    : "No unread notifications at the moment."
+                  }
+                </ThemedText>
+              </View>
+            )}
+          </View>
+
+          {/* Quick Actions */}
+          {filteredNotifications.length > 0 && (
+            <View className="mb-8">
+              <View className="flex-row space-x-3">
+                <ThemedCard variant="elevated" className="flex-1 p-4">
+                  <View className="items-center">
+                    <View className="w-12 h-12 bg-primary/20 rounded-xl items-center justify-center mb-3">
+                      <Ionicons name="checkmark-done" size={24} color="#8fb716" />
+                    </View>
+                    <ThemedText size="sm" weight="semibold" className="text-center">
+                      Mark All Read
+                    </ThemedText>
+                  </View>
+                </ThemedCard>
+                
+                <ThemedCard variant="elevated" className="flex-1 p-4">
+                  <View className="items-center">
+                    <View className="w-12 h-12 bg-accent/20 rounded-xl items-center justify-center mb-3">
+                      <Ionicons name="trash" size={24} color="#b8b8b8" />
+                    </View>
+                    <ThemedText size="sm" weight="semibold" className="text-center">
+                      Clear All
+                    </ThemedText>
+                  </View>
+                </ThemedCard>
+              </View>
             </View>
           )}
-        </View>
 
-        {/* Quick Actions */}
-        {filteredNotifications.length > 0 && (
-          <View className="mb-8">
-            <View className="flex-row space-x-3">
-              <TouchableOpacity className="flex-1 bg-white/80 rounded-2xl p-4 shadow-soft backdrop-blur-sm">
-                <View className="items-center">
-                  <View className="w-12 h-12 bg-primary/20 rounded-xl items-center justify-center mb-3">
-                    <Ionicons name="checkmark-done" size={24} color="#497174" />
-                  </View>
-                  <Text className="text-sm font-semibold text-foreground text-center">
-                    Mark All Read
-                  </Text>
-                </View>
-              </TouchableOpacity>
-              
-              <TouchableOpacity className="flex-1 bg-white/80 rounded-2xl p-4 shadow-soft backdrop-blur-sm">
-                <View className="items-center">
-                  <View className="w-12 h-12 bg-accent/20 rounded-xl items-center justify-center mb-3">
-                    <Ionicons name="trash" size={24} color="#F2B6A0" />
-                  </View>
-                  <Text className="text-sm font-semibold text-foreground text-center">
-                    Clear All
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
-        {/* Bottom Spacing */}
-        <View className="h-6" />
-      </ScrollView>
+          {/* Bottom Spacing */}
+          <View className="h-6" />
+        </ScrollView>
+      </ThemedContainer>
     </SafeAreaView>
   );
 } 

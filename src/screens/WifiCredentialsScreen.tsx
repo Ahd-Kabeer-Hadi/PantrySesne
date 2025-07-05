@@ -1,8 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import React, { useState } from "react";
-import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { View, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ThemedContainer, ThemedCard, ThemedText, ThemedButton, ThemedInput } from "../components/ThemedComponents";
 
 interface WifiCredentialsScreenProps {
   onSubmit: (ssid: string, password: string) => void;
@@ -15,180 +15,129 @@ export default function WifiCredentialsScreen({ onSubmit, loading }: WifiCredent
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = () => {
-    if (!ssid.trim()) {
-      Alert.alert("WiFi Name Required", "Please enter your WiFi network name.");
-      return;
+    if (ssid.trim() && password.trim()) {
+      onSubmit(ssid.trim(), password);
     }
-    if (!password.trim()) {
-      Alert.alert("WiFi Password Required", "Please enter your WiFi password.");
-      return;
-    }
-    onSubmit(ssid.trim(), password.trim());
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      {/* Background Gradient */}
-      <LinearGradient
-        colors={['#F9FAFB', '#F0F7F8', '#D6E4E5']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        className="absolute inset-0"
-      />
-      
-      {/* Floating Background Elements */}
-      <View className="absolute inset-0 overflow-hidden">
-        <View className="absolute top-20 right-10 w-32 h-32 bg-primary/5 rounded-full blur-xl" />
-        <View className="absolute bottom-40 left-8 w-24 h-24 bg-accent/10 rounded-full blur-lg" />
-        <View className="absolute top-1/3 left-1/4 w-16 h-16 bg-success/8 rounded-full blur-md" />
-      </View>
-
-      <View className="flex-1 px-6 pt-8 pb-6">
-        {/* Header */}
-        <View className="items-center mb-8">
-          <View className="w-16 h-16 bg-primary rounded-2xl shadow-soft mb-4 items-center justify-center">
-            <Ionicons name="wifi" size={28} color="#FFFFFF" />
+    <SafeAreaView className="flex-1">
+      <ThemedContainer className="flex-1">
+        <View className="flex-1 px-6 pt-8 pb-6">
+          {/* Header */}
+          <View className="items-center mb-8">
+            <View className="w-20 h-20 bg-primary rounded-2xl shadow-lg mb-6 items-center justify-center">
+              <Ionicons name="wifi" size={36} color="#FFFFFF" />
+            </View>
+            <ThemedText size="2xl" weight="bold" className="text-center mb-3">
+              Connect to WiFi
+            </ThemedText>
+            <ThemedText variant="secondary" className="text-center max-w-xs">
+              Enter your WiFi credentials to connect your device
+            </ThemedText>
           </View>
-          <Text className="text-2xl font-bold text-primary text-center mb-2">
-            Connect to WiFi
-          </Text>
-          <Text className="text-base text-muted-foreground text-center">
-            Your device needs internet to work
-          </Text>
-        </View>
 
-        {/* Main Content */}
-        <View className="flex-1 justify-center">
-          <View className="bg-white/80 rounded-3xl p-6 shadow-soft backdrop-blur-md">
-            <Text className="text-lg font-semibold text-foreground text-center mb-6">
-              Enter your WiFi credentials
-            </Text>
-            
-            {/* WiFi Network Name */}
-            <View className="mb-6">
-              <Text className="text-sm font-medium text-foreground mb-2">
-                WiFi Network Name (SSID)
-              </Text>
-              <View className="relative">
-                <TextInput
+          {/* WiFi Form */}
+          <View className="flex-1">
+            <ThemedCard variant="elevated" className="p-6">
+              <ThemedText size="lg" weight="semibold" className="mb-6">
+                Network Information
+              </ThemedText>
+              
+              {/* SSID Input */}
+              <View className="mb-6">
+                <ThemedText size="sm" weight="medium" className="mb-2">
+                  Network Name (SSID)
+                </ThemedText>
+                <ThemedInput
+                  placeholder="Enter your WiFi network name"
                   value={ssid}
                   onChangeText={setSsid}
-                  placeholder="Enter your WiFi name"
-                  placeholderTextColor="#5C5C5C"
-                  className="bg-white/60 rounded-2xl px-4 py-3 text-base border border-border/30 focus:border-primary/50"
-                  style={{
-                    shadowColor: '#497174',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.05,
-                    shadowRadius: 8,
-                    elevation: 2,
-                  }}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  editable={!loading}
+                  className="mb-1"
                 />
-                <View className="absolute right-3 top-3">
-                  <Ionicons name="wifi" size={20} color="#497174" />
-                </View>
+                <ThemedText size="xs" variant="tertiary">
+                  This is the name of your WiFi network
+                </ThemedText>
               </View>
-            </View>
 
-            {/* WiFi Password */}
-            <View className="mb-8">
-              <Text className="text-sm font-medium text-foreground mb-2">
-                WiFi Password
-              </Text>
-              <View className="relative">
-                <TextInput
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="Enter your WiFi password"
-                  placeholderTextColor="#5C5C5C"
-                  secureTextEntry={!showPassword}
-                  className="bg-white/60 rounded-2xl px-4 py-3 text-base border border-border/30 focus:border-primary/50 pr-12"
-                  style={{
-                    shadowColor: '#497174',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.05,
-                    shadowRadius: 8,
-                    elevation: 2,
-                  }}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  editable={!loading}
-                />
-                <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3"
-                  disabled={loading}
-                >
-                  <Ionicons 
-                    name={showPassword ? "eye-off" : "eye"} 
-                    size={20} 
-                    color="#497174" 
+              {/* Password Input */}
+              <View className="mb-6">
+                <ThemedText size="sm" weight="medium" className="mb-2">
+                  Password
+                </ThemedText>
+                <View className="relative">
+                  <ThemedInput
+                    placeholder="Enter your WiFi password"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                    className="pr-12"
                   />
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                  >
+                    <Ionicons 
+                      name={showPassword ? "eye-off" : "eye"} 
+                      size={20} 
+                      color="#6b7280" 
+                    />
+                  </TouchableOpacity>
+                </View>
+                <ThemedText size="xs" variant="tertiary">
+                  Your WiFi password is encrypted and secure
+                </ThemedText>
               </View>
-            </View>
 
-            {/* Info Card */}
-            <View className="bg-primary/10 rounded-2xl p-4 mb-6 border border-primary/20">
-              <View className="flex-row items-start">
-                <Ionicons name="information-circle" size={20} color="#497174" className="mr-3 mt-0.5" />
-                <View className="flex-1">
-                  <Text className="text-sm font-medium text-primary mb-1">
-                    Your data is secure
-                  </Text>
-                  <Text className="text-xs text-muted-foreground leading-relaxed">
-                    Your WiFi credentials are sent directly to your device via Bluetooth 
-                    and are not stored on our servers.
-                  </Text>
+              {/* Security Note */}
+              <View className="bg-primary/10 rounded-lg p-4 mb-6">
+                <View className="flex-row items-start">
+                  <Ionicons name="shield-checkmark" size={20} color="#8fb716" className="mr-3 mt-0.5" />
+                  <View className="flex-1">
+                    <ThemedText size="sm" weight="medium" variant="primary" className="mb-1">
+                      Secure Connection
+                    </ThemedText>
+                    <ThemedText size="xs" variant="secondary">
+                      Your credentials are encrypted and only used to connect your PantrySense device to your WiFi network.
+                    </ThemedText>
+                  </View>
                 </View>
               </View>
+            </ThemedCard>
+
+            {/* Submit Button */}
+            <View className="space-y-4">
+              <ThemedButton
+                variant="primary"
+                size="lg"
+                onPress={handleSubmit}
+                disabled={loading || !ssid.trim() || !password.trim()}
+                className="shadow-lg"
+              >
+                <View className="flex-row items-center justify-center">
+                  {loading ? (
+                    <>
+                      <View className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                      <ThemedText variant="inverse" weight="semibold">Connecting...</ThemedText>
+                    </>
+                  ) : (
+                    <>
+                      <ThemedText size="lg" weight="semibold" variant="inverse" className="mr-2">
+                        Connect Device
+                      </ThemedText>
+                      <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+                    </>
+                  )}
+                </View>
+              </ThemedButton>
+              
+              <ThemedText size="sm" variant="tertiary" className="text-center">
+                This will connect your device to your WiFi network
+              </ThemedText>
             </View>
           </View>
         </View>
-
-        {/* Action Button */}
-        <View className="space-y-4">
-          <TouchableOpacity
-            onPress={handleSubmit}
-            disabled={loading || !ssid.trim() || !password.trim()}
-            className={`rounded-2xl py-4 px-6 shadow-soft ${
-              loading || !ssid.trim() || !password.trim()
-                ? 'bg-muted/50'
-                : 'bg-primary'
-            }`}
-            style={{
-              shadowColor: '#497174',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.2,
-              shadowRadius: 12,
-              elevation: 8,
-            }}
-          >
-            <View className="flex-row items-center justify-center">
-              {loading ? (
-                <>
-                  <View className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                  <Text className="text-white font-semibold">Connecting...</Text>
-                </>
-              ) : (
-                <>
-                  <Text className="text-white text-lg font-semibold mr-2">
-                    Connect Device
-                  </Text>
-                  <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-                </>
-              )}
-            </View>
-          </TouchableOpacity>
-          
-          <Text className="text-xs text-muted-foreground text-center">
-            This will connect your device to your WiFi network
-          </Text>
-        </View>
-      </View>
+      </ThemedContainer>
     </SafeAreaView>
   );
 } 

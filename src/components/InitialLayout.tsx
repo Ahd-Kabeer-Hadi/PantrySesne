@@ -1,19 +1,36 @@
 import { Stack, useRouter, useSegments } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useCallback, useState } from "react";
+import * as SplashScreen from "expo-splash-screen";
+import { View } from "react-native";
 // import { useAuth } from "../providers/AuthProvider"; // Uncomment when auth is implemented
 import { useBLEStore } from "../stores/bleStore";
+
+// TEMPORARY: Onboarding logic commented out for testing dashboard and other screens
+// TODO: Uncomment onboarding logic when ready to test full flow
+
+// Prevent splash from auto-hiding
+SplashScreen.preventAutoHideAsync();
 
 export default function InitialLayout() {
   // const { user, loading } = useAuth(); // Uncomment when auth is implemented
   const segments = useSegments();
   const router = useRouter();
-  const { getPersistedDevices } = useBLEStore();
+  const { isOnboarded } = useBLEStore();
+  const [appIsReady, setAppIsReady] = useState(false);
 
-  // Simulate onboarding state (replace with real onboarding state logic)
-  const isOnboarded = getPersistedDevices().length > 0;
   // const loading = false; // Uncomment when auth is implemented
 
   useEffect(() => {
+    // Simulate async setup (fonts, state, etc)
+    async function prepare() {
+      // ...any async logic here
+      setAppIsReady(true);
+    }
+    prepare();
+  }, []);
+
+  useEffect(() => {
+    if (!appIsReady) return;
     // if (loading) return; // Uncomment when auth is implemented
 
     // --- Future: Auth logic ---
@@ -29,6 +46,8 @@ export default function InitialLayout() {
 
     // --- Onboarding logic ---
     const isInOnboarding = segments[0] === "(onboarding)";
+    const isInTabs = segments[0] === "(tabs)";
+    
     if (!isOnboarded && !isInOnboarding) {
       router.replace("/(onboarding)");
       return;
@@ -38,9 +57,26 @@ export default function InitialLayout() {
       return;
     }
     // --- End onboarding logic ---
-  }, [segments, /* loading, user, */ isOnboarded, router]);
+  }, [segments, /* loading, user, */ isOnboarded, appIsReady, router]);
+
+  const onLayoutRootView = useCallback(async () => {
+    if (appIsReady) {
+      await SplashScreen.hideAsync();
+    }
+  }, [appIsReady]);
+
+  if (!appIsReady) {
+    return null; // Keep splash visible
+  }
 
   // if (loading) return null; // Uncomment when auth is implemented
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(onboarding)" />
+      </Stack>
+    </View>
+  );
 } 

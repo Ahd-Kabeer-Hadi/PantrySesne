@@ -9,204 +9,211 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Primary Colors
+        // Primary Colors - Main Green
         primary: {
-          DEFAULT: "#497174",
-          light: "#5aa3ad",
-          dark: "#3d5d60",
-          50: "#f0f9fa",
-          100: "#d9f2f4",
-          200: "#b8e6ea",
-          300: "#8dd5dc",
-          400: "#5aa3ad",
-          500: "#497174",
-          600: "#3d5d60",
-          700: "#354d50",
-          800: "#2f4143",
-          900: "#2a393a",
+          DEFAULT: "#8fb716",
+          light: "#a3c42a",
+          dark: "#7a9f0f",
+          50: "#f7fdf0",
+          100: "#eefad8",
+          200: "#ddf4b0",
+          300: "#c8ec7f",
+          400: "#b0e04a",
+          500: "#8fb716",
+          600: "#7a9f0f",
+          700: "#5f7a0d",
+          800: "#4c6110",
+          900: "#3f5012",
         },
         
-        // Secondary Colors
+        // Secondary Colors - Light Green
         secondary: {
-          DEFAULT: "#d6e4e5",
-          light: "#e6f1f2",
-          dark: "#b8d1d3",
-          50: "#f8fbfb",
-          100: "#e6f1f2",
-          200: "#d6e4e5",
-          300: "#b8d1d3",
-          400: "#9abec1",
-          500: "#7ca6aa",
-          600: "#628b8f",
-          700: "#4f7075",
-          800: "#3f5a5d",
-          900: "#344a4c",
+          DEFAULT: "#e4fa5b",
+          light: "#f0ff7a",
+          dark: "#d8f04a",
+          50: "#fafff0",
+          100: "#f7ffd8",
+          200: "#e4fa5b",
+          300: "#d8f04a",
+          400: "#cce03a",
+          500: "#b8d13f",
+          600: "#9bb02a",
+          700: "#7a8c22",
+          800: "#5f6e1e",
+          900: "#4f5a1d",
         },
         
-        // Accent Colors
+        // Accent Colors - Gray
         accent: {
-          DEFAULT: "#f2b6a0",
-          light: "#f7c8b8",
-          dark: "#ec9a7a",
-          50: "#fef7f4",
-          100: "#fdede6",
-          200: "#f7c8b8",
-          300: "#f2b6a0",
-          400: "#ec9a7a",
-          500: "#e67e54",
-          600: "#d6623a",
-          700: "#b34d2a",
-          800: "#8f3e25",
-          900: "#743323",
+          DEFAULT: "#b8b8b8",
+          light: "#d0d0d0",
+          dark: "#a0a0a0",
+          50: "#fafafa",
+          100: "#f5f5f5",
+          200: "#e5e5e5",
+          300: "#d0d0d0",
+          400: "#b8b8b8",
+          500: "#a0a0a0",
+          600: "#8a8a8a",
+          700: "#6b6b6b",
+          800: "#4a4a4a",
+          900: "#2a2a2a",
         },
         
-        // Success Colors
+        // Success Colors - Using green
         success: {
-          DEFAULT: "#7fc8a9",
-          light: "#a3e2c7",
-          dark: "#5db08c",
-          50: "#f0fdf6",
-          100: "#dcfce8",
-          200: "#a3e2c7",
-          300: "#7fc8a9",
-          400: "#5db08c",
-          500: "#3d9970",
-          600: "#2d7a5a",
-          700: "#245f47",
-          800: "#1e4d3a",
-          900: "#1a3f30",
+          DEFAULT: "#8fb716",
+          light: "#a3c42a",
+          dark: "#7a9f0f",
+          50: "#f7fdf0",
+          100: "#eefad8",
+          200: "#ddf4b0",
+          300: "#c8ec7f",
+          400: "#b0e04a",
+          500: "#8fb716",
+          600: "#7a9f0f",
+          700: "#5f7a0d",
+          800: "#4c6110",
+          900: "#3f5012",
         },
         
-        // Warning Colors
+        // Warning Colors - Using light green
         warning: {
-          DEFAULT: "#ffb344",
-          light: "#ffdd85",
-          dark: "#ff9a1a",
-          50: "#fffbeb",
-          100: "#fff3c4",
-          200: "#ffdd85",
-          300: "#ffb344",
-          400: "#ff9a1a",
-          500: "#f57c00",
-          600: "#e65100",
-          700: "#bf360c",
-          800: "#8d2f0a",
-          900: "#5d1f07",
+          DEFAULT: "#e4fa5b",
+          light: "#f0ff7a",
+          dark: "#d8f04a",
+          50: "#fafff0",
+          100: "#f7ffd8",
+          200: "#e4fa5b",
+          300: "#d8f04a",
+          400: "#cce03a",
+          500: "#b8d13f",
+          600: "#9bb02a",
+          700: "#7a8c22",
+          800: "#5f6e1e",
+          900: "#4f5a1d",
         },
         
-        // Error Colors
+        // Error Colors - Standard red
         error: {
-          DEFAULT: "#e36565",
-          light: "#fca5a5",
-          dark: "#dc2626",
+          DEFAULT: "#dc2626",
+          light: "#ef4444",
+          dark: "#b91c1c",
           50: "#fef2f2",
           100: "#fee2e2",
-          200: "#fca5a5",
-          300: "#e36565",
-          400: "#dc2626",
-          500: "#b91c1c",
-          600: "#991b1b",
-          700: "#7f1d1d",
-          800: "#651f1f",
-          900: "#4c1f1f",
+          200: "#fecaca",
+          300: "#fca5a5",
+          400: "#f87171",
+          500: "#ef4444",
+          600: "#dc2626",
+          700: "#b91c1c",
+          800: "#991b1b",
+          900: "#7f1d1d",
         },
         
         // Text Colors
         text: {
-          primary: "#1b1b1b",
-          secondary: "#5c5c5c",
-          tertiary: "#718096",
+          primary: "#0c0b0e",
+          secondary: "#4a4a4a",
+          tertiary: "#6b7280",
           inverse: "#ffffff",
-          disabled: "#a0a0a0",
+          disabled: "#b8b8b8",
         },
         
         // Surface Colors
         surface: {
           DEFAULT: "#ffffff",
-          elevated: "#ffffff",
+          elevated: "#fafafa",
           card: "#ffffff",
-          overlay: "rgba(0, 0, 0, 0.5)",
+          overlay: "rgba(12, 11, 14, 0.5)",
         },
         
         // Background Colors
         background: {
-          DEFAULT: "#f9fafb",
-          secondary: "#f7fafc",
-          tertiary: "#edf2f7",
+          DEFAULT: "#ffffff",
+          secondary: "#fafafa",
+          tertiary: "#f5f5f5",
         },
         
         // Border Colors
         border: {
-          DEFAULT: "#e2e8f0",
-          light: "#f1f5f9",
-          dark: "#cbd5e0",
+          DEFAULT: "#e5e5e5",
+          light: "#f0f0f0",
+          dark: "#d0d0d0",
         },
         
         // Dark Theme Colors
         dark: {
-          // Primary remains the same but lighter for dark mode
+          // Primary - Lighter green for dark mode
           primary: {
-            DEFAULT: "#8abfc5",
-            light: "#a8d1d6",
-            dark: "#6ca8ae",
+            DEFAULT: "#a3c42a",
+            light: "#b8d13f",
+            dark: "#8fb716",
           },
           
-          // Accent for dark mode
+          // Secondary - Adjusted for dark mode
+          secondary: {
+            DEFAULT: "#d8f04a",
+            light: "#e4fa5b",
+            dark: "#cce03a",
+          },
+          
+          // Accent - Lighter gray for dark mode
           accent: {
-            DEFAULT: "#f4c7b5",
-            light: "#f7d4c7",
-            dark: "#f0b5a0",
+            DEFAULT: "#d0d0d0",
+            light: "#e0e0e0",
+            dark: "#b8b8b8",
           },
           
-          // Success for dark mode
+          // Success - Lighter green for dark mode
           success: {
-            DEFAULT: "#96e4c2",
-            light: "#b0ecd0",
-            dark: "#7dd9b4",
+            DEFAULT: "#a3c42a",
+            light: "#b8d13f",
+            dark: "#8fb716",
           },
           
-          // Warning for dark mode
+          // Warning - Adjusted for dark mode
           warning: {
-            DEFAULT: "#ffc37b",
-            light: "#ffd299",
-            dark: "#ffb85c",
+            DEFAULT: "#d8f04a",
+            light: "#e4fa5b",
+            dark: "#cce03a",
           },
           
-          // Error for dark mode
+          // Error - Lighter red for dark mode
           error: {
-            DEFAULT: "#f27d7d",
-            light: "#f59999",
-            dark: "#ef6161",
+            DEFAULT: "#ef4444",
+            light: "#f87171",
+            dark: "#dc2626",
           },
           
           // Text for dark mode
           text: {
-            primary: "#f1f1f1",
-            secondary: "#b0b0b0",
-            tertiary: "#8a8a8a",
-            inverse: "#121212",
-            disabled: "#666666",
+            primary: "#ffffff",
+            secondary: "#e0e0e0",
+            tertiary: "#b8b8b8",
+            inverse: "#0c0b0e",
+            disabled: "#6b7280",
           },
           
           // Surface for dark mode
           surface: {
-            DEFAULT: "#1e1e1e",
-            elevated: "#2a2a2a",
-            card: "#1e1e1e",
+            DEFAULT: "#0c0b0e",
+            elevated: "#1a1a1a",
+            card: "#0c0b0e",
             overlay: "rgba(255, 255, 255, 0.1)",
           },
           
           // Background for dark mode
           background: {
-            DEFAULT: "#121212",
+            DEFAULT: "#0c0b0e",
             secondary: "#1a1a1a",
-            tertiary: "#242424",
+            tertiary: "#2a2a2a",
           },
           
           // Border for dark mode
           border: {
             DEFAULT: "#2a2a2a",
-            light: "#333333",
+            light: "#3a3a3a",
             dark: "#1a1a1a",
           },
         },
@@ -219,115 +226,55 @@ module.exports = {
         '128': '32rem',
       },
       
-      // Custom border radius
+      // Custom border radius - Clean and elegant
       borderRadius: {
-        'soft': '8px',
-        'medium': '16px',
-        'large': '24px',
-        'extra': '32px',
+        'sm': '4px',
+        'md': '8px',
+        'lg': '12px',
+        'xl': '16px',
+        '2xl': '20px',
       },
       
-      // Custom shadows
+      // Clean shadows - No neumorphism
       boxShadow: {
-        'soft': '0 2px 8px rgba(0, 0, 0, 0.06)',
-        'medium': '0 4px 16px rgba(0, 0, 0, 0.08)',
-        'strong': '0 8px 32px rgba(0, 0, 0, 0.12)',
-        'neumorphic': '8px 8px 16px rgba(0, 0, 0, 0.1), -8px -8px 16px rgba(255, 255, 255, 0.8)',
-        'neumorphic-dark': '8px 8px 16px rgba(0, 0, 0, 0.3), -8px -8px 16px rgba(255, 255, 255, 0.05)',
-        'glow-primary': '0 0 20px rgba(73, 113, 116, 0.3)',
-        'glow-accent': '0 0 20px rgba(242, 182, 160, 0.3)',
-        'glow-success': '0 0 20px rgba(127, 200, 169, 0.3)',
-        'glow-warning': '0 0 20px rgba(255, 179, 68, 0.3)',
-        'glow-error': '0 0 20px rgba(227, 101, 101, 0.3)',
+        'sm': '0 1px 2px rgba(12, 11, 14, 0.05)',
+        'md': '0 4px 6px rgba(12, 11, 14, 0.1)',
+        'lg': '0 10px 15px rgba(12, 11, 14, 0.1)',
+        'xl': '0 20px 25px rgba(12, 11, 14, 0.15)',
+        '2xl': '0 25px 50px rgba(12, 11, 14, 0.25)',
       },
       
-      // Custom animations
+      // Clean animations
       animation: {
-        'fade-in': 'fadeIn 0.5s ease-out',
-        'slide-in-from-top': 'slideInFromTop 0.3s ease-out',
-        'slide-in-from-bottom': 'slideInFromBottom 0.3s ease-out',
-        'slide-in-from-left': 'slideInFromLeft 0.3s ease-out',
-        'slide-in-from-right': 'slideInFromRight 0.3s ease-out',
+        'fade-in': 'fadeIn 0.3s ease-out',
+        'slide-in': 'slideIn 0.3s ease-out',
         'scale-in': 'scaleIn 0.2s ease-out',
-        'breathing': 'breathing 3s ease-in-out infinite',
-        'pulse-soft': 'pulseSoft 2s ease-in-out infinite',
-        'bounce-soft': 'bounceSoft 1s ease-in-out infinite',
       },
       
-      // Custom keyframes
+      // Simple keyframes
       keyframes: {
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
         },
-        slideInFromTop: {
-          '0%': { transform: 'translateY(-100%)', opacity: '0' },
+        slideIn: {
+          '0%': { transform: 'translateY(10px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
-        },
-        slideInFromBottom: {
-          '0%': { transform: 'translateY(100%)', opacity: '0' },
-          '100%': { transform: 'translateY(0)', opacity: '1' },
-        },
-        slideInFromLeft: {
-          '0%': { transform: 'translateX(-100%)', opacity: '0' },
-          '100%': { transform: 'translateX(0)', opacity: '1' },
-        },
-        slideInFromRight: {
-          '0%': { transform: 'translateX(100%)', opacity: '0' },
-          '100%': { transform: 'translateX(0)', opacity: '1' },
         },
         scaleIn: {
           '0%': { transform: 'scale(0.95)', opacity: '0' },
           '100%': { transform: 'scale(1)', opacity: '1' },
         },
-        breathing: {
-          '0%, 100%': { transform: 'scale(1)' },
-          '50%': { transform: 'scale(1.02)' },
-        },
-        pulseSoft: {
-          '0%, 100%': { opacity: '1' },
-          '50%': { opacity: '0.8' },
-        },
-        bounceSoft: {
-          '0%, 100%': { transform: 'translateY(0)' },
-          '50%': { transform: 'translateY(-5px)' },
-        },
       },
       
-      // Custom font families
+      // Clean font families
       fontFamily: {
-        'inter': ['Inter', 'system-ui', 'sans-serif'],
-        'manrope': ['Manrope', 'system-ui', 'sans-serif'],
-      },
-      
-      // Custom backdrop blur
-      backdropBlur: {
-        'xs': '2px',
-        'sm': '4px',
-        'md': '8px',
-        'lg': '16px',
-        'xl': '24px',
-        '2xl': '32px',
-        '3xl': '48px',
+        'sans': ['Inter', 'system-ui', 'sans-serif'],
+        'mono': ['Space Mono', 'monospace'],
       },
     },
   },
   plugins: [
     require("tailwindcss-animate"),
-    // Custom plugin for glass effect
-    function({ addUtilities }) {
-      addUtilities({
-        '.glass': {
-          backgroundColor: 'rgba(255, 255, 255, 0.1)',
-          borderWidth: '1px',
-          borderColor: 'rgba(255, 255, 255, 0.2)',
-        },
-        '.glass-dark': {
-          backgroundColor: 'rgba(0, 0, 0, 0.1)',
-          borderWidth: '1px',
-          borderColor: 'rgba(255, 255, 255, 0.1)',
-        },
-      })
-    },
   ],
 }

@@ -1,209 +1,205 @@
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect, useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import React from "react";
+import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ThemedContainer, ThemedCard, ThemedText, ThemedButton } from "../components/ThemedComponents";
 
 interface ProvisioningScreenProps {
-  status: "pending" | "success" | "error";
+  status: "connecting" | "success" | "error";
   onRetry: () => void;
   onDone: () => void;
 }
 
 export default function ProvisioningScreen({ status, onRetry, onDone }: ProvisioningScreenProps) {
-  const [showSuccess, setShowSuccess] = useState(false);
-
-  useEffect(() => {
-    if (status === "success") {
-      const timer = setTimeout(() => setShowSuccess(true), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [status]);
-
-  const renderPendingState = () => (
+  const renderConnectingState = () => (
     <View className="flex-1 justify-center items-center py-12">
-      <View className="w-32 h-32 bg-primary/20 rounded-3xl items-center justify-center mb-8 breathing">
-        <Ionicons name="wifi" size={64} color="#497174" />
+      <View className="w-32 h-32 bg-primary/20 rounded-3xl items-center justify-center mb-8">
+        <View className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
       </View>
-      <Text className="text-2xl font-bold text-foreground text-center mb-4">
-        Connecting to WiFi...
-      </Text>
-      <Text className="text-base text-muted-foreground text-center leading-relaxed max-w-sm mb-8">
-        Your device is connecting to your WiFi network. This may take a few moments.
-      </Text>
+      <ThemedText size="2xl" weight="bold" className="text-center mb-4">
+        Connecting Device
+      </ThemedText>
+      <ThemedText variant="secondary" className="text-center leading-relaxed max-w-sm mb-8">
+        Please wait while we connect your device to WiFi and set up the connection.
+      </ThemedText>
       
-      {/* Progress Indicators */}
-      <View className="flex-row space-x-2 mb-8">
-        <View className="w-3 h-3 bg-primary rounded-full animate-pulse" />
-        <View className="w-3 h-3 bg-primary/60 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
-        <View className="w-3 h-3 bg-primary/40 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
-      </View>
-      
-      <View className="bg-white/60 rounded-2xl p-4 shadow-soft backdrop-blur-sm">
-        <Text className="text-sm text-muted-foreground text-center">
-          Please wait while we establish the connection
-        </Text>
+      {/* Progress Steps */}
+      <View className="w-full max-w-sm space-y-4 mb-8">
+        <View className="flex-row items-center">
+          <View className="w-8 h-8 bg-primary rounded-full items-center justify-center mr-3">
+            <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+          </View>
+          <ThemedText variant="secondary" className="flex-1">
+            Device discovered
+          </ThemedText>
+        </View>
+        
+        <View className="flex-row items-center">
+          <View className="w-8 h-8 bg-primary rounded-full items-center justify-center mr-3">
+            <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+          </View>
+          <ThemedText variant="secondary" className="flex-1">
+            WiFi credentials sent
+          </ThemedText>
+        </View>
+        
+        <View className="flex-row items-center">
+          <View className="w-8 h-8 bg-primary/20 rounded-full items-center justify-center mr-3">
+            <View className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          </View>
+          <ThemedText variant="secondary" className="flex-1">
+            Connecting to WiFi...
+          </ThemedText>
+        </View>
       </View>
     </View>
   );
 
   const renderSuccessState = () => (
     <View className="flex-1 justify-center items-center py-12">
-      <View className="w-32 h-32 bg-success/20 rounded-3xl items-center justify-center mb-8 scale-in">
-        <Ionicons name="checkmark-circle" size={64} color="#7FC8A9" />
+      <View className="w-32 h-32 bg-success/20 rounded-3xl items-center justify-center mb-8">
+        <Ionicons name="checkmark-circle" size={64} color="#8fb716" />
       </View>
-      <Text className="text-2xl font-bold text-foreground text-center mb-4">
+      <ThemedText size="2xl" weight="bold" className="text-center mb-4">
         Successfully Connected!
-      </Text>
-      <Text className="text-base text-muted-foreground text-center leading-relaxed max-w-sm mb-8">
+      </ThemedText>
+      <ThemedText variant="secondary" className="text-center leading-relaxed max-w-sm mb-8">
         Your device is now connected to WiFi and ready to monitor your pantry.
-      </Text>
+      </ThemedText>
       
       {/* Success Details */}
-      <View className="bg-success/10 rounded-2xl p-4 mb-8 border border-success/20">
-        <View className="flex-row items-center mb-2">
-          <Ionicons name="checkmark-circle" size={20} color="#7FC8A9" className="mr-2" />
-          <Text className="text-sm font-semibold text-success">WiFi Connected</Text>
+      <ThemedCard variant="elevated" className="p-6 mb-8">
+        <View className="flex-row items-center mb-3">
+          <Ionicons name="checkmark-circle" size={24} color="#8fb716" className="mr-3" />
+          <ThemedText size="lg" weight="semibold" variant="success">WiFi Connected</ThemedText>
         </View>
-        <Text className="text-xs text-muted-foreground">
+        <ThemedText size="sm" variant="secondary">
           Your device can now communicate with the cloud and send you smart alerts.
-        </Text>
-      </View>
+        </ThemedText>
+      </ThemedCard>
       
-      <TouchableOpacity
+      <ThemedButton
+        variant="success"
+        size="lg"
         onPress={onDone}
-        className="bg-success rounded-2xl py-4 px-8 shadow-soft"
-        style={{
-          shadowColor: '#7FC8A9',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.2,
-          shadowRadius: 12,
-          elevation: 8,
-        }}
+        className="shadow-lg"
       >
-        <View className="flex-row items-center">
-          <Text className="text-white text-lg font-semibold mr-2">
+        <View className="flex-row items-center justify-center">
+          <ThemedText size="lg" weight="semibold" variant="inverse" className="mr-2">
             Continue to Dashboard
-          </Text>
+          </ThemedText>
           <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
         </View>
-      </TouchableOpacity>
+      </ThemedButton>
     </View>
   );
 
   const renderErrorState = () => (
     <View className="flex-1 justify-center items-center py-12">
       <View className="w-32 h-32 bg-error/20 rounded-3xl items-center justify-center mb-8">
-        <Ionicons name="close-circle" size={64} color="#E36565" />
+        <Ionicons name="close-circle" size={64} color="#dc2626" />
       </View>
-      <Text className="text-2xl font-bold text-foreground text-center mb-4">
+      <ThemedText size="2xl" weight="bold" className="text-center mb-4">
         Connection Failed
-      </Text>
-      <Text className="text-base text-muted-foreground text-center leading-relaxed max-w-sm mb-8">
-        We couldn't connect your device to WiFi. This could be due to incorrect credentials or network issues.
-      </Text>
+      </ThemedText>
+      <ThemedText variant="secondary" className="text-center leading-relaxed max-w-sm mb-8">
+        We couldn't connect your device to WiFi. This might be due to incorrect credentials or network issues.
+      </ThemedText>
       
       {/* Error Details */}
-      <View className="bg-error/10 rounded-2xl p-4 mb-8 border border-error/20">
-        <View className="flex-row items-start mb-2">
-          <Ionicons name="information-circle" size={20} color="#E36565" className="mr-2 mt-0.5" />
-          <View className="flex-1">
-            <Text className="text-sm font-semibold text-error mb-1">
-              Possible Issues
-            </Text>
-            <Text className="text-xs text-muted-foreground leading-relaxed">
-              • Incorrect WiFi password{"\n"}
-              • Network is not 2.4GHz (some devices don't support 5GHz){"\n"}
-              • Device is too far from router{"\n"}
-              • Network has special security settings
-            </Text>
+      <ThemedCard variant="elevated" className="p-6 mb-8">
+        <View className="flex-row items-center mb-3">
+          <Ionicons name="warning" size={24} color="#dc2626" className="mr-3" />
+          <ThemedText size="lg" weight="semibold" variant="error">Connection Error</ThemedText>
+        </View>
+        <ThemedText size="sm" variant="secondary" className="mb-3">
+          Possible causes:
+        </ThemedText>
+        <View className="space-y-2">
+          <View className="flex-row items-start">
+            <View className="w-2 h-2 bg-error rounded-full mt-2 mr-3" />
+            <ThemedText size="sm" variant="secondary" className="flex-1">
+              Incorrect WiFi password
+            </ThemedText>
+          </View>
+          <View className="flex-row items-start">
+            <View className="w-2 h-2 bg-error rounded-full mt-2 mr-3" />
+            <ThemedText size="sm" variant="secondary" className="flex-1">
+              Network not in range
+            </ThemedText>
+          </View>
+          <View className="flex-row items-start">
+            <View className="w-2 h-2 bg-error rounded-full mt-2 mr-3" />
+            <ThemedText size="sm" variant="secondary" className="flex-1">
+              Device connection timeout
+            </ThemedText>
           </View>
         </View>
-      </View>
+      </ThemedCard>
       
-      {/* Action Buttons */}
       <View className="space-y-3 w-full">
-        <TouchableOpacity
+        <ThemedButton
+          variant="primary"
+          size="lg"
           onPress={onRetry}
-          className="bg-primary rounded-2xl py-4 px-6 shadow-soft"
-          style={{
-            shadowColor: '#497174',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.2,
-            shadowRadius: 12,
-            elevation: 8,
-          }}
+          className="shadow-lg"
         >
           <View className="flex-row items-center justify-center">
             <Ionicons name="refresh" size={20} color="#FFFFFF" className="mr-2" />
-            <Text className="text-white text-lg font-semibold">
+            <ThemedText size="lg" weight="semibold" variant="inverse">
               Try Again
-            </Text>
+            </ThemedText>
           </View>
-        </TouchableOpacity>
+        </ThemedButton>
         
-        <TouchableOpacity
+        <ThemedButton
+          variant="ghost"
           onPress={onDone}
-          className="bg-white/60 rounded-2xl py-3 px-6 shadow-soft backdrop-blur-sm"
+          className="shadow-lg"
         >
-          <Text className="text-primary font-semibold text-center">
+          <ThemedText variant="primary" weight="semibold" className="text-center">
             Skip for Now
-          </Text>
-        </TouchableOpacity>
+          </ThemedText>
+        </ThemedButton>
       </View>
     </View>
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      {/* Background Gradient */}
-      <LinearGradient
-        colors={['#F9FAFB', '#F0F7F8', '#D6E4E5']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        className="absolute inset-0"
-      />
-      
-      {/* Floating Background Elements */}
-      <View className="absolute inset-0 overflow-hidden">
-        <View className="absolute top-20 right-10 w-32 h-32 bg-primary/5 rounded-full blur-xl" />
-        <View className="absolute bottom-40 left-8 w-24 h-24 bg-accent/10 rounded-full blur-lg" />
-        <View className="absolute top-1/3 left-1/4 w-16 h-16 bg-success/8 rounded-full blur-md" />
-      </View>
-
-      <View className="flex-1 px-6 pt-8 pb-6">
-        {/* Header */}
-        <View className="items-center mb-8">
-          <View className={`w-16 h-16 rounded-2xl shadow-soft mb-4 items-center justify-center ${
-            status === "success" ? "bg-success" : 
-            status === "error" ? "bg-error" : "bg-primary"
-          }`}>
-            <Ionicons 
-              name={
-                status === "success" ? "checkmark" : 
-                status === "error" ? "close" : "wifi"
-              } 
-              size={28} 
-              color="#FFFFFF" 
-            />
+    <SafeAreaView className="flex-1">
+      <ThemedContainer className="flex-1">
+        <View className="flex-1 px-6 pt-8 pb-6">
+          {/* Header */}
+          <View className="items-center mb-8">
+            <View className={`w-20 h-20 rounded-2xl shadow-lg mb-6 items-center justify-center ${
+              status === "success" ? "bg-success" : 
+              status === "error" ? "bg-error" : "bg-primary"
+            }`}>
+              <Ionicons 
+                name={
+                  status === "success" ? "checkmark" : 
+                  status === "error" ? "close" : "wifi"
+                } 
+                size={36} 
+                color="#FFFFFF" 
+              />
+            </View>
+            <ThemedText size="2xl" weight="bold" className="text-center mb-3">
+              {status === "success" ? "Setup Complete" : 
+               status === "error" ? "Setup Failed" : "Setting Up"}
+            </ThemedText>
+            <ThemedText variant="secondary" className="text-center max-w-xs">
+              {status === "success" ? "Your device is ready to use" : 
+               status === "error" ? "Let's try again" : "Connecting your device"}
+            </ThemedText>
           </View>
-          <Text className="text-2xl font-bold text-primary text-center mb-2">
-            {status === "success" ? "Setup Complete" : 
-             status === "error" ? "Setup Failed" : "Setting Up"}
-          </Text>
-          <Text className="text-base text-muted-foreground text-center">
-            {status === "success" ? "Your device is ready to use" : 
-             status === "error" ? "Let's try again" : "Connecting your device"}
-          </Text>
-        </View>
 
-        {/* Content */}
-        <View className="flex-1">
-          {status === "pending" && renderPendingState()}
+          {/* Content */}
+          {status === "connecting" && renderConnectingState()}
           {status === "success" && renderSuccessState()}
           {status === "error" && renderErrorState()}
         </View>
-      </View>
+      </ThemedContainer>
     </SafeAreaView>
   );
 } 

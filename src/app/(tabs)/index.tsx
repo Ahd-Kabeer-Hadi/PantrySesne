@@ -1,8 +1,8 @@
 import React from "react";
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from "react-native";
+import { View, ScrollView, TouchableOpacity, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import { ThemedContainer, ThemedCard, ThemedText, ThemedButton, ThemedBadge } from "../../components/ThemedComponents";
 
 // Mock data - replace with real data from your store
 const mockDevices = [
@@ -34,9 +34,9 @@ const mockDevices = [
 
 const getStatusColor = (status: "good" | "low" | "empty") => {
   switch (status) {
-    case "good": return "#7FC8A9";
-    case "low": return "#FFB344";
-    case "empty": return "#E36565";
+    case "good": return "#8fb716"; // Primary green
+    case "low": return "#e4fa5b"; // Secondary green
+    case "empty": return "#dc2626"; // Error red
   }
 };
 
@@ -72,56 +72,48 @@ export default function DashboardScreen() {
     const percentage = (device.weight / device.maxWeight) * 100;
 
     return (
-      <TouchableOpacity
+      <ThemedCard
         key={device.id}
-        className="bg-white/80 rounded-2xl p-4 mb-4 shadow-soft backdrop-blur-sm active:scale-95 transition-all duration-200"
-        style={{
-          shadowColor: '#497174',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 8,
-          elevation: 4,
-        }}
+        variant="elevated"
+        className="mb-4"
       >
-        <View className="flex-row items-center justify-between mb-3">
+        {/* Header */}
+        <View className="flex-row items-center justify-between mb-4">
           <View className="flex-row items-center">
             <View 
-              className="w-10 h-10 rounded-xl items-center justify-center mr-3"
+              className="w-12 h-12 rounded-xl items-center justify-center mr-3"
               style={{ backgroundColor: `${statusColor}20` }}
             >
-              <Ionicons name="restaurant" size={20} color={statusColor} />
+              <Ionicons name="restaurant" size={24} color={statusColor} />
             </View>
             <View>
-              <Text className="text-base font-semibold text-foreground">
+              <ThemedText size="lg" weight="semibold" className="mb-1">
                 {device.name}
-              </Text>
-              <Text className="text-xs text-muted-foreground">
+              </ThemedText>
+              <ThemedText size="sm" variant="secondary">
                 {device.lastUpdated}
-              </Text>
+              </ThemedText>
             </View>
           </View>
-          <View className="flex-row items-center">
-            <Ionicons name={statusIcon} size={20} color={statusColor} className="mr-1" />
-            <Text 
-              className="text-xs font-medium"
-              style={{ color: statusColor }}
-            >
-              {statusText}
-            </Text>
-          </View>
+          <ThemedBadge 
+            variant={device.status === "good" ? "success" : device.status === "low" ? "warning" : "error"}
+            size="sm"
+          >
+            {statusText}
+          </ThemedBadge>
         </View>
 
-        {/* Weight Bar */}
-        <View className="mb-3">
+        {/* Weight Progress */}
+        <View className="mb-4">
           <View className="flex-row justify-between items-center mb-2">
-            <Text className="text-sm text-muted-foreground">
+            <ThemedText size="sm" variant="secondary">
               {device.weight}g / {device.maxWeight}g
-            </Text>
-            <Text className="text-sm font-medium text-foreground">
+            </ThemedText>
+            <ThemedText size="sm" weight="semibold">
               {percentage.toFixed(0)}%
-            </Text>
+            </ThemedText>
           </View>
-          <View className="w-full h-2 bg-muted/30 rounded-full overflow-hidden">
+          <View className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
             <View 
               className="h-full rounded-full transition-all duration-300"
               style={{ 
@@ -133,143 +125,130 @@ export default function DashboardScreen() {
         </View>
 
         {/* Quick Actions */}
-        <View className="flex-row space-x-2">
-          <TouchableOpacity className="flex-1 bg-primary/10 rounded-xl py-2 px-3">
+        <View className="flex-row">
+          <TouchableOpacity className="flex-1 bg-primary/10 rounded-lg py-3 px-4 mr-2">
             <View className="flex-row items-center justify-center">
-              <Ionicons name="notifications" size={16} color="#497174" className="mr-1" />
-              <Text className="text-xs font-medium text-primary">Set Alert</Text>
+              <Ionicons name="notifications" size={16} color="#8fb716" className="mr-2" />
+              <ThemedText size="sm" weight="medium" variant="primary">Set Alert</ThemedText>
             </View>
           </TouchableOpacity>
-          <TouchableOpacity className="flex-1 bg-accent/10 rounded-xl py-2 px-3">
+          <TouchableOpacity className="flex-1 bg-secondary/10 rounded-lg py-3 px-4">
             <View className="flex-row items-center justify-center">
-              <Ionicons name="add" size={16} color="#F2B6A0" className="mr-1" />
-              <Text className="text-xs font-medium text-accent">Add Item</Text>
+              <Ionicons name="add" size={16} color="#e4fa5b" className="mr-2" />
+              <ThemedText size="sm" weight="medium" variant="secondary">Add Item</ThemedText>
             </View>
           </TouchableOpacity>
         </View>
-      </TouchableOpacity>
+      </ThemedCard>
     );
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      {/* Background Gradient */}
-      <LinearGradient
-        colors={['#F9FAFB', '#F0F7F8', '#D6E4E5']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        className="absolute inset-0"
-      />
-      
-      {/* Floating Background Elements */}
-      <View className="absolute inset-0 overflow-hidden">
-        <View className="absolute top-20 right-10 w-32 h-32 bg-primary/5 rounded-full blur-xl" />
-        <View className="absolute bottom-40 left-8 w-24 h-24 bg-accent/10 rounded-full blur-lg" />
-        <View className="absolute top-1/3 left-1/4 w-16 h-16 bg-success/8 rounded-full blur-md" />
-      </View>
-
-      <ScrollView 
-        className="flex-1 px-6 pt-8"
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        {/* Header */}
-        <View className="mb-8">
-          <View className="flex-row items-center justify-between mb-4">
-            <View>
-              <Text className="text-2xl font-bold text-foreground">
-                Your Pantry
-              </Text>
-              <Text className="text-base text-muted-foreground">
-                {mockDevices.length} containers monitored
-              </Text>
+    <SafeAreaView className="flex-1">
+      <ThemedContainer className="flex-1">
+        <ScrollView 
+          className="flex-1 px-6 pt-8"
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          {/* Header */}
+          <View className="mb-8">
+            <View className="flex-row items-center justify-between mb-6">
+              <View>
+                <ThemedText size="3xl" weight="bold" className="mb-2">
+                  Your Pantry
+                </ThemedText>
+                <ThemedText size="lg" variant="secondary">
+                  {mockDevices.length} containers monitored
+                </ThemedText>
+              </View>
+              <TouchableOpacity className="w-14 h-14 bg-primary rounded-2xl items-center justify-center shadow-lg">
+                <Ionicons name="add" size={28} color="#FFFFFF" />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity className="w-12 h-12 bg-primary rounded-2xl items-center justify-center shadow-soft">
-              <Ionicons name="add" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
+
+            {/* Status Summary */}
+            <ThemedCard variant="elevated" className="p-6">
+              <ThemedText size="lg" weight="semibold" className="mb-4">
+                Quick Overview
+              </ThemedText>
+              <View className="flex-row justify-between">
+                <View className="items-center flex-1">
+                  <View className="w-16 h-16 bg-success/20 rounded-2xl items-center justify-center mb-3">
+                    <Ionicons name="checkmark-circle" size={32} color="#8fb716" />
+                  </View>
+                  <ThemedText size="xl" weight="bold" className="mb-1">1</ThemedText>
+                  <ThemedText size="sm" variant="secondary">Well Stocked</ThemedText>
+                </View>
+                <View className="items-center flex-1">
+                  <View className="w-16 h-16 bg-warning/20 rounded-2xl items-center justify-center mb-3">
+                    <Ionicons name="warning" size={32} color="#e4fa5b" />
+                  </View>
+                  <ThemedText size="xl" weight="bold" className="mb-1">1</ThemedText>
+                  <ThemedText size="sm" variant="secondary">Running Low</ThemedText>
+                </View>
+                <View className="items-center flex-1">
+                  <View className="w-16 h-16 bg-error/20 rounded-2xl items-center justify-center mb-3">
+                    <Ionicons name="close-circle" size={32} color="#dc2626" />
+                  </View>
+                  <ThemedText size="xl" weight="bold" className="mb-1">1</ThemedText>
+                  <ThemedText size="sm" variant="secondary">Empty</ThemedText>
+                </View>
+              </View>
+            </ThemedCard>
           </View>
 
-          {/* Status Summary */}
-          <View className="bg-white/80 rounded-2xl p-4 shadow-soft backdrop-blur-sm">
-            <Text className="text-sm font-semibold text-foreground mb-3">
-              Quick Overview
-            </Text>
-            <View className="flex-row justify-between">
-              <View className="items-center">
-                <View className="w-12 h-12 bg-success/20 rounded-xl items-center justify-center mb-2">
-                  <Ionicons name="checkmark-circle" size={24} color="#7FC8A9" />
-                </View>
-                <Text className="text-lg font-bold text-foreground">1</Text>
-                <Text className="text-xs text-muted-foreground">Well Stocked</Text>
-              </View>
-              <View className="items-center">
-                <View className="w-12 h-12 bg-warning/20 rounded-xl items-center justify-center mb-2">
-                  <Ionicons name="warning" size={24} color="#FFB344" />
-                </View>
-                <Text className="text-lg font-bold text-foreground">1</Text>
-                <Text className="text-xs text-muted-foreground">Running Low</Text>
-              </View>
-              <View className="items-center">
-                <View className="w-12 h-12 bg-error/20 rounded-xl items-center justify-center mb-2">
-                  <Ionicons name="close-circle" size={24} color="#E36565" />
-                </View>
-                <Text className="text-lg font-bold text-foreground">1</Text>
-                <Text className="text-xs text-muted-foreground">Empty</Text>
-              </View>
+          {/* Devices List */}
+          <View className="mb-8">
+            <View className="flex-row items-center justify-between mb-4">
+              <ThemedText size="xl" weight="semibold">
+                Smart Containers
+              </ThemedText>
+              <TouchableOpacity className="flex-row items-center">
+                <ThemedText size="sm" variant="primary" weight="medium" className="mr-2">View All</ThemedText>
+                <Ionicons name="chevron-forward" size={16} color="#8fb716" />
+              </TouchableOpacity>
             </View>
-          </View>
-        </View>
-
-        {/* Devices List */}
-        <View className="mb-6">
-          <View className="flex-row items-center justify-between mb-4">
-            <Text className="text-lg font-semibold text-foreground">
-              Smart Containers
-            </Text>
-            <TouchableOpacity className="flex-row items-center">
-              <Text className="text-sm text-primary font-medium mr-1">View All</Text>
-              <Ionicons name="chevron-forward" size={16} color="#497174" />
-            </TouchableOpacity>
-          </View>
-          
-          {mockDevices.map(renderDeviceCard)}
-        </View>
-
-        {/* Quick Actions */}
-        <View className="mb-8">
-          <Text className="text-lg font-semibold text-foreground mb-4">
-            Quick Actions
-          </Text>
-          <View className="flex-row space-x-3">
-            <TouchableOpacity className="flex-1 bg-white/80 rounded-2xl p-4 shadow-soft backdrop-blur-sm">
-              <View className="items-center">
-                <View className="w-12 h-12 bg-primary/20 rounded-xl items-center justify-center mb-3">
-                  <Ionicons name="scan" size={24} color="#497174" />
-                </View>
-                <Text className="text-sm font-semibold text-foreground text-center">
-                  Add Container
-                </Text>
-              </View>
-            </TouchableOpacity>
             
-            <TouchableOpacity className="flex-1 bg-white/80 rounded-2xl p-4 shadow-soft backdrop-blur-sm">
-              <View className="items-center">
-                <View className="w-12 h-12 bg-accent/20 rounded-xl items-center justify-center mb-3">
-                  <Ionicons name="notifications" size={24} color="#F2B6A0" />
-                </View>
-                <Text className="text-sm font-semibold text-foreground text-center">
-                  Manage Alerts
-                </Text>
-              </View>
-            </TouchableOpacity>
+            {mockDevices.map(renderDeviceCard)}
           </View>
-        </View>
 
-        {/* Bottom Spacing */}
-        <View className="h-6" />
-      </ScrollView>
+          {/* Quick Actions */}
+          <View className="mb-8">
+            <ThemedText size="xl" weight="semibold" className="mb-4">
+              Quick Actions
+            </ThemedText>
+            <View className="flex-row">
+              <ThemedCard variant="elevated" className="flex-1 p-6 mr-3">
+                <View className="items-center">
+                  <View className="w-16 h-16 bg-primary/20 rounded-2xl items-center justify-center mb-4">
+                    <Ionicons name="scan" size={32} color="#8fb716" />
+                  </View>
+                  <ThemedText size="base" weight="semibold" className="text-center">
+                    Add Container
+                  </ThemedText>
+                </View>
+              </ThemedCard>
+              
+              <ThemedCard variant="elevated" className="flex-1 p-6">
+                <View className="items-center">
+                  <View className="w-16 h-16 bg-secondary/20 rounded-2xl items-center justify-center mb-4">
+                    <Ionicons name="notifications" size={32} color="#e4fa5b" />
+                  </View>
+                  <ThemedText size="base" weight="semibold" className="text-center">
+                    Manage Alerts
+                  </ThemedText>
+                </View>
+              </ThemedCard>
+            </View>
+          </View>
+
+          {/* Bottom Spacing */}
+          <View className="h-6" />
+        </ScrollView>
+      </ThemedContainer>
     </SafeAreaView>
   );
 } 

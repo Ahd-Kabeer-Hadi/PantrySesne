@@ -53,6 +53,18 @@
             "bluetooth-central"
           ]
         }
+      ],
+      [
+        "react-native-permissions",
+        {
+          "ios": {
+            "locationWhenInUsePermission": "PantrySense needs location access to scan for Bluetooth devices."
+          },
+          "android": {
+            "bluetoothConnectPermission": "PantrySense needs Bluetooth access to connect to smart containers.",
+            "accessFineLocationPermission": "PantrySense needs location access to scan for Bluetooth devices."
+          }
+        }
       ]
     ],
     "experiments": {

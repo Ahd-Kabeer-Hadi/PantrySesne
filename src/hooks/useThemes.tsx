@@ -1,5 +1,8 @@
-// src/hooks/useTheme.ts
-import { useColorScheme } from 'react-native';
+// src/hooks/useThemes.tsx
+// Theme configuration with light theme as default to prevent visibility issues
+// System theme override is disabled by default - only applies when user explicitly chooses 'system'
+import React, { createContext, useContext, ReactNode, useEffect } from 'react';
+import { useColorScheme, ColorSchemeName } from 'react-native';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { MMKV } from 'react-native-mmkv';
@@ -76,104 +79,104 @@ export interface ThemeColors {
 }
 
 export const lightTheme: ThemeColors = {
-  // Primary
-  primary: '#497174',
-  primaryLight: '#5aa3ad',
-  primaryDark: '#3d5d60',
+  // Primary - Main Green
+  primary: '#8fb716',
+  primaryLight: '#a3c42a',
+  primaryDark: '#7a9f0f',
   
-  // Secondary
-  secondary: '#d6e4e5',
-  secondaryLight: '#e6f1f2',
-  secondaryDark: '#b8d1d3',
+  // Secondary - Light Green
+  secondary: '#e4fa5b',
+  secondaryLight: '#f0ff7a',
+  secondaryDark: '#d8f04a',
   
-  // Accent
-  accent: '#f2b6a0',
-  accentLight: '#f7c8b8',
-  accentDark: '#ec9a7a',
+  // Accent - Gray
+  accent: '#b8b8b8',
+  accentLight: '#d0d0d0',
+  accentDark: '#a0a0a0',
   
-  // Status
-  success: '#7fc8a9',
-  successLight: '#a3e2c7',
-  successDark: '#5db08c',
-  warning: '#ffb344',
-  warningLight: '#ffdd85',
-  warningDark: '#ff9a1a',
-  error: '#e36565',
-  errorLight: '#fca5a5',
-  errorDark: '#dc2626',
+  // Status - Using green variations
+  success: '#8fb716',
+  successLight: '#a3c42a',
+  successDark: '#7a9f0f',
+  warning: '#e4fa5b',
+  warningLight: '#f0ff7a',
+  warningDark: '#d8f04a',
+  error: '#dc2626',
+  errorLight: '#ef4444',
+  errorDark: '#b91c1c',
   
   // Text
-  textPrimary: '#1b1b1b',
-  textSecondary: '#5c5c5c',
-  textTertiary: '#718096',
+  textPrimary: '#0c0b0e',
+  textSecondary: '#4a4a4a',
+  textTertiary: '#6b7280',
   textInverse: '#ffffff',
-  textDisabled: '#a0a0a0',
+  textDisabled: '#b8b8b8',
   
   // Surface
   surface: '#ffffff',
-  surfaceElevated: '#ffffff',
+  surfaceElevated: '#fafafa',
   surfaceCard: '#ffffff',
-  surfaceOverlay: 'rgba(0, 0, 0, 0.5)',
+  surfaceOverlay: 'rgba(12, 11, 14, 0.5)',
   
   // Background
-  background: '#f9fafb',
-  backgroundSecondary: '#f7fafc',
-  backgroundTertiary: '#edf2f7',
+  background: '#ffffff',
+  backgroundSecondary: '#fafafa',
+  backgroundTertiary: '#f5f5f5',
   
   // Border
-  border: '#e2e8f0',
-  borderLight: '#f1f5f9',
-  borderDark: '#cbd5e0',
+  border: '#e5e5e5',
+  borderLight: '#f0f0f0',
+  borderDark: '#d0d0d0',
 };
 
 export const darkTheme: ThemeColors = {
-  // Primary (adjusted for dark mode)
-  primary: '#8abfc5',
-  primaryLight: '#a8d1d6',
-  primaryDark: '#6ca8ae',
+  // Primary - Main Green (slightly lighter for dark mode)
+  primary: '#a3c42a',
+  primaryLight: '#b8d13f',
+  primaryDark: '#8fb716',
   
-  // Secondary
-  secondary: '#2d3748',
-  secondaryLight: '#4a5568',
-  secondaryDark: '#1a202c',
+  // Secondary - Light Green (adjusted for dark mode)
+  secondary: '#d8f04a',
+  secondaryLight: '#e4fa5b',
+  secondaryDark: '#cce03a',
   
-  // Accent
-  accent: '#f4c7b5',
-  accentLight: '#f7d4c7',
-  accentDark: '#f0b5a0',
+  // Accent - Gray (lighter for dark mode)
+  accent: '#d0d0d0',
+  accentLight: '#e0e0e0',
+  accentDark: '#b8b8b8',
   
-  // Status
-  success: '#96e4c2',
-  successLight: '#b0ecd0',
-  successDark: '#7dd9b4',
-  warning: '#ffc37b',
-  warningLight: '#ffd299',
-  warningDark: '#ffb85c',
-  error: '#f27d7d',
-  errorLight: '#f59999',
-  errorDark: '#ef6161',
+  // Status - Using green variations
+  success: '#a3c42a',
+  successLight: '#b8d13f',
+  successDark: '#8fb716',
+  warning: '#d8f04a',
+  warningLight: '#e4fa5b',
+  warningDark: '#cce03a',
+  error: '#ef4444',
+  errorLight: '#f87171',
+  errorDark: '#dc2626',
   
   // Text
-  textPrimary: '#f1f1f1',
-  textSecondary: '#b0b0b0',
-  textTertiary: '#8a8a8a',
-  textInverse: '#121212',
-  textDisabled: '#666666',
+  textPrimary: '#ffffff',
+  textSecondary: '#e0e0e0',
+  textTertiary: '#b8b8b8',
+  textInverse: '#0c0b0e',
+  textDisabled: '#6b7280',
   
   // Surface
-  surface: '#1e1e1e',
-  surfaceElevated: '#2a2a2a',
-  surfaceCard: '#1e1e1e',
+  surface: '#0c0b0e',
+  surfaceElevated: '#1a1a1a',
+  surfaceCard: '#0c0b0e',
   surfaceOverlay: 'rgba(255, 255, 255, 0.1)',
   
   // Background
-  background: '#121212',
+  background: '#0c0b0e',
   backgroundSecondary: '#1a1a1a',
-  backgroundTertiary: '#242424',
+  backgroundTertiary: '#2a2a2a',
   
   // Border
   border: '#2a2a2a',
-  borderLight: '#333333',
+  borderLight: '#3a3a3a',
   borderDark: '#1a1a1a',
 };
 
@@ -182,28 +185,30 @@ interface ThemeStore {
   isDark: boolean;
   colors: ThemeColors;
   setThemeMode: (mode: ThemeMode) => void;
-  updateTheme: (systemColorScheme: 'light' | 'dark' | null) => void;
+  updateTheme: (systemColorScheme: ColorSchemeName | null) => void;
 }
 
 export const useThemeStore = create<ThemeStore>()(
   persist(
     (set, get) => ({
-      themeMode: 'system',
+      themeMode: 'light',
       isDark: false,
       colors: lightTheme,
       
       setThemeMode: (mode: ThemeMode) => {
         set({ themeMode: mode });
         // Update theme immediately after setting mode
-        const systemColorScheme = useColorScheme();
-        get().updateTheme(systemColorScheme);
+        // Note: We can't call useColorScheme here as it's not a hook context
+        // This will be handled in the useTheme hook
       },
       
-      updateTheme: (systemColorScheme: 'light' | 'dark' | null) => {
+      updateTheme: (systemColorScheme: ColorSchemeName | null) => {
         const { themeMode } = get();
         let isDark = false;
         
-        if (themeMode === 'system') {
+        // Only use system theme if explicitly set to 'system' and systemColorScheme is provided
+        // Otherwise, use the user's chosen theme
+        if (themeMode === 'system' && systemColorScheme !== null) {
           isDark = systemColorScheme === 'dark';
         } else {
           isDark = themeMode === 'dark';
@@ -234,10 +239,16 @@ export const useTheme = () => {
     updateTheme,
   } = useThemeStore();
   
-  // Update theme when system color scheme changes
-  React.useEffect(() => {
+  // Update theme when system color scheme changes, but only if user has chosen 'system'
+  useEffect(() => {
+    // Only update based on system theme if user explicitly chose 'system' mode
+    if (themeMode === 'system') {
     updateTheme(systemColorScheme);
-  }, [systemColorScheme, updateTheme]);
+    } else {
+      // For light/dark modes, ignore system theme changes
+      updateTheme(null);
+    }
+  }, [systemColorScheme, themeMode, updateTheme]);
   
   return {
     themeMode,
@@ -249,14 +260,12 @@ export const useTheme = () => {
 };
 
 // Theme context for React components
-import React, { createContext, useContext, ReactNode } from 'react';
-
 interface ThemeContextType {
   themeMode: ThemeMode;
   isDark: boolean;
   colors: ThemeColors;
   setThemeMode: (mode: ThemeMode) => void;
-  systemColorScheme: 'light' | 'dark' | null;
+  systemColorScheme: ColorSchemeName;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -293,7 +302,7 @@ export const createThemedStyle = (
   return isDark ? { ...lightStyles, ...darkStyles } : lightStyles;
 };
 
-// Common theme-based class names
+// Common theme-based class names for NativeWind
 export const themeClasses = {
   light: {
     background: 'bg-background',
@@ -307,15 +316,15 @@ export const themeClasses = {
     border: 'border-border',
   },
   dark: {
-    background: 'bg-dark-background-DEFAULT',
-    surface: 'bg-dark-surface-DEFAULT',
-    card: 'bg-dark-surface-card',
+    background: 'dark:bg-background',
+    surface: 'dark:bg-surface',
+    card: 'dark:bg-surface-card',
     text: {
-      primary: 'text-dark-text-primary',
-      secondary: 'text-dark-text-secondary',
-      tertiary: 'text-dark-text-tertiary',
+      primary: 'dark:text-text-primary',
+      secondary: 'dark:text-text-secondary',
+      tertiary: 'dark:text-text-tertiary',
     },
-    border: 'border-dark-border-DEFAULT',
+    border: 'dark:border-border',
   },
 };
 
