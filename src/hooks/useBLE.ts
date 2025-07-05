@@ -26,12 +26,6 @@ export function useBLE() {
     provisioning,
     setProvisioning,
     
-    // Scanning states
-    scanningProvisioning,
-    scanningSmartPots,
-    setScanningProvisioning,
-    setScanningSmartPots,
-    
     error,
     setError,
     persistProvisionedDevice,
@@ -69,7 +63,6 @@ export function useBLE() {
     console.log('🔍 BLE: Permissions OK, starting provisioning device scan...');
     setProvisioningDevices([]);
     setError(null);
-    setScanningProvisioning(true);
     
     bleService.scanForProvisioningDevices(
       (device: Device) => {
@@ -84,11 +77,9 @@ export function useBLE() {
         console.log('🔍 BLE: Provisioning scan error:', err);
         const appError = parseError(err);
         setError(appError.userMessage);
-        setScanningProvisioning(false);
       },
       () => {
         console.log('🔍 BLE: Provisioning scan completed');
-        setScanningProvisioning(false);
       }
     );
   };
@@ -163,7 +154,6 @@ export function useBLE() {
     console.log('🔍 BLE: Permissions OK, starting Smart Pot scan...');
     setSmartPots([]);
     setError(null);
-    setScanningSmartPots(true);
     
     bleService.scanForSmartPots(
       (device: Device) => {
@@ -180,11 +170,9 @@ export function useBLE() {
         console.log('🔍 BLE: Smart Pot scan error:', err);
         const appError = parseError(err);
         setError(appError.userMessage);
-        setScanningSmartPots(false);
       },
       () => {
         console.log('🔍 BLE: Smart Pot scan completed');
-        setScanningSmartPots(false);
       }
     );
   };
@@ -281,10 +269,6 @@ export function useBLE() {
     
     // WiFi provisioning
     provisioning,
-    
-    // Scanning states
-    scanningProvisioning,
-    scanningSmartPots,
     
     // General
     disconnect,

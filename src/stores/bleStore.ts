@@ -32,10 +32,6 @@ interface BLEState {
   // WiFi provisioning state
   provisioning: 'idle' | 'pending' | 'success' | 'error';
   
-  // Scanning states
-  scanningProvisioning: boolean;
-  scanningSmartPots: boolean;
-  
   // General state
   error: string | null;
   isOnboarded: boolean;
@@ -51,8 +47,6 @@ interface BLEState {
   setConnectedSmartPot: (device: Device | null) => void;
   
   setProvisioning: (status: 'idle' | 'pending' | 'success' | 'error') => void;
-  setScanningProvisioning: (scanning: boolean) => void;
-  setScanningSmartPots: (scanning: boolean) => void;
   setError: (err: string | null) => void;
   
   // Persistence
@@ -76,10 +70,6 @@ export const useBLEStore = create<BLEState>((set, get) => ({
   // WiFi provisioning
   provisioning: 'idle',
   error: null,
-  
-  // Scanning states
-  scanningProvisioning: false,
-  scanningSmartPots: false,
   
   // Check if user has completed onboarding by looking at persisted devices
   isOnboarded: getProvisionedDevices().length > 0,
@@ -105,8 +95,6 @@ export const useBLEStore = create<BLEState>((set, get) => ({
   
   // General actions
   setProvisioning: (status) => set({ provisioning: status }),
-  setScanningProvisioning: (scanning) => set({ scanningProvisioning: scanning }),
-  setScanningSmartPots: (scanning) => set({ scanningSmartPots: scanning }),
   setError: (err) => set({ error: err }),
   
   // Persistence

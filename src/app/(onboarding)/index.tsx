@@ -27,9 +27,6 @@ export default function OnboardingFlow() {
     connectedProvisioningDevice,
     provisionWiFi,
     
-    // Scanning states
-    scanningProvisioning,
-    
     // General
     provisioning,
     disconnect,
@@ -77,8 +74,7 @@ export default function OnboardingFlow() {
             rssi: d.device.rssi || -70,
             isConnectable: d.device.isConnectable || true
           }))}
-          scanning={scanningProvisioning}
-          error={error}
+          scanning={false}
           onRefresh={scanForProvisioningDevices}
           onSelect={async (deviceInfo) => {
             const provisioningDevice = provisioningDevices.find(d => d.id === deviceInfo.id);

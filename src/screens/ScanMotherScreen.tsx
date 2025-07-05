@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { View, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedContainer, ThemedCard, ThemedText, ThemedButton, ThemedBadge } from "../components/ThemedComponents";
@@ -14,7 +14,6 @@ interface BLEDevice {
 interface ScanMotherScreenProps {
   devices: BLEDevice[];
   scanning: boolean;
-  error?: string | null;
   onRefresh: () => void;
   onSelect: (device: BLEDevice) => void;
 }
@@ -22,16 +21,59 @@ interface ScanMotherScreenProps {
 export default function ScanMotherScreen({ 
   devices, 
   scanning, 
-  error,
   onRefresh, 
   onSelect 
 }: ScanMotherScreenProps) {
   
-  const handleRefresh = () => {
-    if (!scanning) {
+  // Component-level state for user feedback
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+  
+  // Watch for changes in devices to provide accurate feedback when scan completes
+  useEffect(() => {
+    console.log('🔍 ScanMotherScreen: State change - isScanning:', isScanning, 'devices.length:', devices.length);
+    
+    // If we were scanning and now have devices, scan completed successfully
+    if (isScanning && devices.length > 0) {
+      console.log('🔍 ScanMotherScreen: Scan completed successfully with devices');
+      setIsScanning(false);
+      setScanError(null);
+    }
+    // If we were scanning and still no devices after a delay, show helpful message
+    else if (isScanning && devices.length === 0) {
+      console.log('🔍 ScanMotherScreen: Still scanning, setting timeout for completion');
+      // Add a small delay to allow for devices to be found
+      const timer = setTimeout(() => {
+        if (isScanning && devices.length === 0) {
+          console.log('🔍 ScanMotherScreen: Scan timeout - no devices found');
+          setIsScanning(false);
+          setScanError('No SmartPot Master devices found. Please check if your device is powered on and in range.');
+        }
+      }, 8000); // Match BLE service timeout
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isScanning, devices.length]);
+  
+  const handleRefresh = async () => {
+    if (isScanning) return;
+    
+    console.log('🔍 ScanMotherScreen: Starting scan...');
+    setIsScanning(true);
+    setScanError(null);
+    
+    try {
       onRefresh();
+    } catch (error) {
+      console.log('🔍 ScanMotherScreen: Scan failed:', error);
+      setScanError('Failed to start scan. Please check your Bluetooth settings and try again.');
+      setIsScanning(false);
     }
   };
+
+  // Use only local state for UI feedback
+  const showScanning = isScanning;
+  const showError = scanError;
 
   const renderScanningState = () => (
     <View className="flex-1 justify-center items-center py-12">
@@ -64,15 +106,42 @@ export default function ScanMotherScreen({
 
   const renderErrorState = () => (
     <View className="flex-1 justify-center items-center py-12">
-      <View className="w-32 h-32 bg-red-100 rounded-3xl items-center justify-center mb-8">
-        <Ionicons name="alert-circle" size={64} color="#dc2626" />
+      <View className="w-32 h-32 bg-accent/20 rounded-3xl items-center justify-center mb-8">
+        <Ionicons name="wifi" size={64} color="#b8b8b8" />
       </View>
-      <ThemedText size="2xl" weight="bold" className="text-center mb-4 text-red-600">
-        Scan Failed
+      <ThemedText size="2xl" weight="bold" className="text-center mb-4">
+        No SmartPot Master Found
       </ThemedText>
       <ThemedText variant="secondary" className="text-center leading-relaxed max-w-sm mb-8">
-        {error || "Unable to scan for devices. Please check your Bluetooth settings and try again."}
+        {showError || "Make sure your SmartPot Master device is powered on and in provisioning mode."}
       </ThemedText>
+      
+      {/* Troubleshooting tips */}
+      <View className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-8 w-full max-w-sm">
+        <ThemedText size="sm" weight="semibold" className="mb-3 text-gray-800">
+          Troubleshooting Tips:
+        </ThemedText>
+        <View className="space-y-2">
+          <View className="flex-row items-start">
+            <View className="w-1.5 h-1.5 bg-gray-400 rounded-full mt-2 mr-3 flex-shrink-0" />
+            <ThemedText size="sm" variant="secondary" className="flex-1">
+              Ensure Bluetooth is turned on
+            </ThemedText>
+          </View>
+          <View className="flex-row items-start">
+            <View className="w-1.5 h-1.5 bg-gray-400 rounded-full mt-2 mr-3 flex-shrink-0" />
+            <ThemedText size="sm" variant="secondary" className="flex-1">
+              Check that your device is within 10 meters
+            </ThemedText>
+          </View>
+          <View className="flex-row items-start">
+            <View className="w-1.5 h-1.5 bg-gray-400 rounded-full mt-2 mr-3 flex-shrink-0" />
+            <ThemedText size="sm" variant="secondary" className="flex-1">
+              Make sure the SmartPot Master is in setup mode
+            </ThemedText>
+          </View>
+        </View>
+      </View>
       
       <ThemedButton
         variant="secondary"
@@ -233,33 +302,6 @@ export default function ScanMotherScreen({
         Make sure your SmartPot Master device is powered on and in provisioning mode. Try refreshing the scan.
       </ThemedText>
       
-      {/* Troubleshooting tips */}
-      <View className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-8 w-full max-w-sm">
-        <ThemedText size="sm" weight="semibold" className="mb-3 text-gray-800">
-          Troubleshooting Tips:
-        </ThemedText>
-        <View className="space-y-2">
-          <View className="flex-row items-start">
-            <View className="w-1.5 h-1.5 bg-gray-400 rounded-full mt-2 mr-3 flex-shrink-0" />
-            <ThemedText size="sm" variant="secondary" className="flex-1">
-              Ensure Bluetooth is turned on
-            </ThemedText>
-          </View>
-          <View className="flex-row items-start">
-            <View className="w-1.5 h-1.5 bg-gray-400 rounded-full mt-2 mr-3 flex-shrink-0" />
-            <ThemedText size="sm" variant="secondary" className="flex-1">
-              Check that your device is within 10 meters
-            </ThemedText>
-          </View>
-          <View className="flex-row items-start">
-            <View className="w-1.5 h-1.5 bg-gray-400 rounded-full mt-2 mr-3 flex-shrink-0" />
-            <ThemedText size="sm" variant="secondary" className="flex-1">
-              Make sure the SmartPot Master is in setup mode
-            </ThemedText>
-          </View>
-        </View>
-      </View>
-      
       <ThemedButton
         variant="secondary"
         size="lg"
@@ -294,9 +336,9 @@ export default function ScanMotherScreen({
           </View>
 
           {/* Content */}
-          {scanning ? (
+          {showScanning ? (
             renderScanningState()
-          ) : error ? (
+          ) : showError ? (
             renderErrorState()
           ) : devices.length > 0 ? (
             renderSuccessState()
