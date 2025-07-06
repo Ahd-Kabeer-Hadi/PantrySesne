@@ -22,58 +22,60 @@ export function useBLEPermissions() {
 
   const [manager] = useState(() => new BleManager());
 
-  // Check Bluetooth state
+  // ✅ Check if Bluetooth is powered on
   const checkBluetoothState = async () => {
     try {
       const state = await manager.state();
       const isEnabled = state === State.PoweredOn;
-      console.log('🔍 BLE Permissions: Bluetooth state:', state, 'enabled:', isEnabled);
+
+      console.log('🔍 [Bluetooth State] Raw state:', state);
+      console.log('✅ [Bluetooth Enabled]:', isEnabled);
+
       setPermissionState(prev => ({
         ...prev,
         bluetoothEnabled: isEnabled,
         error: isEnabled ? null : 'Bluetooth is not enabled',
       }));
+
       return isEnabled;
     } catch (error) {
-      console.log('🔍 BLE Permissions: Failed to check Bluetooth state:', error);
+      console.error('❌ [Bluetooth Error]: Failed to check state:', error);
+
       setPermissionState(prev => ({
         ...prev,
         bluetoothEnabled: false,
         error: 'Failed to check Bluetooth state',
       }));
+
       return false;
     }
   };
 
-  // Check and request location permission
+  // ✅ Check and request Location Permission (Required for BLE on Android)
   const checkLocationPermission = async () => {
     try {
-      const permission = Platform.OS === 'ios' 
-        ? PERMISSIONS.IOS.LOCATION_WHEN_IN_USE
-        : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION;
+      const permission =
+        Platform.OS === 'ios'
+          ? PERMISSIONS.IOS.LOCATION_WHEN_IN_USE
+          : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION;
 
-      console.log('🔍 BLE Permissions: Checking location permission...');
+      console.log('🔍 [Location Permission] Checking permission for:', permission);
       const result = await check(permission);
-      console.log('🔍 BLE Permissions: Location permission result:', result);
-      
+      console.log('🔍 [Location Permission] Check result:', result);
+
       if (result === RESULTS.GRANTED) {
-        setPermissionState(prev => ({
-          ...prev,
-          locationPermission: 'granted',
-        }));
+        console.log('✅ [Location Permission] Already granted');
+        setPermissionState(prev => ({ ...prev, locationPermission: 'granted' }));
         return true;
       }
 
       if (result === RESULTS.DENIED) {
-        console.log('🔍 BLE Permissions: Requesting location permission...');
+        console.log('📡 [Location Permission] Requesting permission...');
         const requestResult = await request(permission);
-        console.log('🔍 BLE Permissions: Location permission request result:', requestResult);
-        
+        console.log('📡 [Location Permission] Request result:', requestResult);
+
         if (requestResult === RESULTS.GRANTED) {
-          setPermissionState(prev => ({
-            ...prev,
-            locationPermission: 'granted',
-          }));
+          setPermissionState(prev => ({ ...prev, locationPermission: 'granted' }));
           return true;
         } else {
           setPermissionState(prev => ({
@@ -86,6 +88,7 @@ export function useBLEPermissions() {
       }
 
       if (result === RESULTS.BLOCKED) {
+        console.warn('🚫 [Location Permission] Blocked in settings');
         setPermissionState(prev => ({
           ...prev,
           locationPermission: 'blocked',
@@ -101,7 +104,7 @@ export function useBLEPermissions() {
       }));
       return false;
     } catch (error) {
-      console.log('🔍 BLE Permissions: Location permission error:', error);
+      console.error('❌ [Location Permission] Error checking location:', error);
       setPermissionState(prev => ({
         ...prev,
         locationPermission: 'unavailable',
@@ -111,85 +114,68 @@ export function useBLEPermissions() {
     }
   };
 
-  // Check Bluetooth permission (Android 12+ only)
+  // ✅ Check and request Bluetooth permissions (only applies for Android 12+)
   const checkBluetoothPermission = async () => {
     if (Platform.OS === 'ios') {
-      // iOS doesn't have separate Bluetooth permission
-      console.log('🔍 BLE Permissions: iOS - no separate Bluetooth permission needed');
-      setPermissionState(prev => ({
-        ...prev,
-        bluetoothPermission: 'granted',
-      }));
+      console.log('ℹ️ [iOS] No explicit Bluetooth permission required');
+      setPermissionState(prev => ({ ...prev, bluetoothPermission: 'granted' }));
       return true;
     }
 
-    // For Android, check if we're on Android 12+ (API 31+)
     const androidVersion = Platform.Version;
-    console.log('🔍 BLE Permissions: Android version:', androidVersion);
-    
+    console.log('🔍 [Android Version]:', androidVersion);
+
+    // ✅ Android < 12 doesn't need explicit BLUETOOTH_CONNECT/SCAN permissions
     if (typeof androidVersion === 'number' && androidVersion < 31) {
-      // Android 10-11: No separate Bluetooth permission needed
-      console.log('🔍 BLE Permissions: Android < 12 - no separate Bluetooth permission needed');
-      setPermissionState(prev => ({
-        ...prev,
-        bluetoothPermission: 'granted',
-      }));
+      console.log('✅ [Android <12] No extra Bluetooth permission needed');
+      setPermissionState(prev => ({ ...prev, bluetoothPermission: 'granted' }));
       return true;
     }
 
-    // Android 12+: Check BLUETOOTH_CONNECT permission
+    // ✅ Android 12+ permissions
     try {
-      const permission = PERMISSIONS.ANDROID.BLUETOOTH_CONNECT;
-      console.log('🔍 BLE Permissions: Checking Bluetooth permission (Android 12+)...');
-      const result = await check(permission);
-      console.log('🔍 BLE Permissions: Bluetooth permission result:', result);
-      
-      if (result === RESULTS.GRANTED) {
-        setPermissionState(prev => ({
-          ...prev,
-          bluetoothPermission: 'granted',
-        }));
-        return true;
-      }
+      const connectPermission = PERMISSIONS.ANDROID.BLUETOOTH_CONNECT;
+      const scanPermission = PERMISSIONS.ANDROID.BLUETOOTH_SCAN;
 
-      if (result === RESULTS.DENIED) {
-        console.log('🔍 BLE Permissions: Requesting Bluetooth permission...');
-        const requestResult = await request(permission);
-        console.log('🔍 BLE Permissions: Bluetooth permission request result:', requestResult);
-        
-        if (requestResult === RESULTS.GRANTED) {
-          setPermissionState(prev => ({
-            ...prev,
-            bluetoothPermission: 'granted',
-          }));
-          return true;
-        } else {
-          setPermissionState(prev => ({
-            ...prev,
-            bluetoothPermission: 'denied',
-            error: 'Bluetooth permission is required',
-          }));
-          return false;
+      console.log('🔍 [Bluetooth Permission] Checking BLUETOOTH_CONNECT...');
+      const connectResult = await check(connectPermission);
+      console.log('🔍 [Bluetooth CONNECT] Result:', connectResult);
+
+      console.log('🔍 [Bluetooth Permission] Checking BLUETOOTH_SCAN...');
+      const scanResult = await check(scanPermission);
+      console.log('🔍 [Bluetooth SCAN] Result:', scanResult);
+
+      let granted = connectResult === RESULTS.GRANTED && scanResult === RESULTS.GRANTED;
+
+      // Request if not granted
+      if (!granted) {
+        if (connectResult === RESULTS.DENIED) {
+          const connectRequest = await request(connectPermission);
+          console.log('📡 [Bluetooth CONNECT] Request result:', connectRequest);
+          granted = connectRequest === RESULTS.GRANTED;
+        }
+        if (scanResult === RESULTS.DENIED) {
+          const scanRequest = await request(scanPermission);
+          console.log('📡 [Bluetooth SCAN] Request result:', scanRequest);
+          granted = granted && scanRequest === RESULTS.GRANTED;
         }
       }
 
-      if (result === RESULTS.BLOCKED) {
-        setPermissionState(prev => ({
-          ...prev,
-          bluetoothPermission: 'blocked',
-          error: 'Bluetooth permission is blocked. Please enable it in settings.',
-        }));
-        return false;
+      if (granted) {
+        console.log('✅ [Bluetooth Permission] All permissions granted');
+        setPermissionState(prev => ({ ...prev, bluetoothPermission: 'granted' }));
+        return true;
       }
 
+      console.warn('🚫 [Bluetooth Permission] Missing permissions');
       setPermissionState(prev => ({
         ...prev,
-        bluetoothPermission: 'unavailable',
-        error: 'Bluetooth permission is not available',
+        bluetoothPermission: 'denied',
+        error: 'Bluetooth permissions (CONNECT/SCAN) are required',
       }));
       return false;
     } catch (error) {
-      console.log('🔍 BLE Permissions: Bluetooth permission error:', error);
+      console.error('❌ [Bluetooth Permission] Error checking Bluetooth permissions:', error);
       setPermissionState(prev => ({
         ...prev,
         bluetoothPermission: 'unavailable',
@@ -199,9 +185,9 @@ export function useBLEPermissions() {
     }
   };
 
-  // Check all permissions
+  // ✅ Run all permission checks and update final state
   const checkAllPermissions = async () => {
-    console.log('🔍 BLE Permissions: Checking all permissions...');
+    console.log('🔄 [Permissions] Starting full permission check...');
     setPermissionState(prev => ({ ...prev, error: null }));
 
     const [bluetoothEnabled, locationGranted, bluetoothGranted] = await Promise.all([
@@ -211,43 +197,37 @@ export function useBLEPermissions() {
     ]);
 
     const isReady = bluetoothEnabled && locationGranted && bluetoothGranted;
-    
-    console.log('🔍 BLE Permissions: All permissions ready:', isReady, {
+
+    console.log('✅ [Permissions Check Complete]', {
       bluetoothEnabled,
       locationGranted,
-      bluetoothGranted
-    });
-    
-    setPermissionState(prev => ({
-      ...prev,
+      bluetoothGranted,
       isReady,
-    }));
+    });
 
+    setPermissionState(prev => ({ ...prev, isReady }));
     return isReady;
   };
 
-  // Request permissions with user guidance (only for blocked permissions)
+  // ✅ Show alert if permissions are not ready
   const requestPermissions = async () => {
-    console.log('🔍 BLE Permissions: Requesting permissions...');
+    console.log('📢 [Permissions] Requesting user to approve permissions...');
     const isReady = await checkAllPermissions();
-    
+
     if (!isReady) {
-      console.log('🔍 BLE Permissions: Permissions not ready, showing alert');
+      console.warn('🚨 [Permissions] Not ready, showing alert');
       Alert.alert(
         'Permissions Required',
         'PantrySense needs Bluetooth and Location permissions to scan for devices. Please enable them in Settings.',
         [
           { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Open Settings', 
+          {
+            text: 'Open Settings',
             onPress: () => {
-              if (Platform.OS === 'ios') {
-                Linking.openURL('app-settings:');
-              } else {
-                Linking.openSettings();
-              }
-            }
-          }
+              const url = Platform.OS === 'ios' ? 'app-settings:' : 'package:com.kabeerhadi.PantrySense';
+              Linking.openURL(url);
+            },
+          },
         ]
       );
     }
@@ -255,11 +235,12 @@ export function useBLEPermissions() {
     return isReady;
   };
 
-  // Listen for Bluetooth state changes
+  // ✅ Subscribe to Bluetooth state changes in real-time
   useEffect(() => {
     const subscription = manager.onStateChange((state) => {
       const isEnabled = state === State.PoweredOn;
-      console.log('🔍 BLE Permissions: Bluetooth state changed:', state, 'enabled:', isEnabled);
+      console.log('📶 [Bluetooth State Change]:', state, 'Enabled:', isEnabled);
+
       setPermissionState(prev => ({
         ...prev,
         bluetoothEnabled: isEnabled,
@@ -270,7 +251,7 @@ export function useBLEPermissions() {
     return () => subscription.remove();
   }, [manager]);
 
-  // Initial permission check
+  // ✅ Initial permission check on mount
   useEffect(() => {
     checkAllPermissions();
   }, []);
@@ -283,4 +264,4 @@ export function useBLEPermissions() {
     checkLocationPermission,
     checkBluetoothPermission,
   };
-} 
+}

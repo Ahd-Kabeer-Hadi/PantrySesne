@@ -9,25 +9,30 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSBluetoothAlwaysUsageDescription": "PantrySense uses Bluetooth to connect to smart kitchen containers.",
+        "NSLocationWhenInUseUsageDescription": "PantrySense needs your location to detect nearby BLE devices.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "com.kabeerhadi.PantrySense"
     },
     "android": {
+      "package": "com.kabeerhadi.PantrySense",
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
       "permissions": [
+        "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.BLUETOOTH",
         "android.permission.BLUETOOTH_ADMIN",
         "android.permission.BLUETOOTH_CONNECT",
-        "android.permission.ACCESS_FINE_LOCATION"
-      ],
-      "package": "com.kabeerhadi.PantrySense"
+        "android.permission.BLUETOOTH_SCAN"
+      ]
     },
     "web": {
-      "bundler": "metro",
-      "output": "static",
       "favicon": "./src/assets/images/favicon.png"
     },
     "plugins": [
@@ -44,9 +49,8 @@
       [
         "react-native-ble-plx",
         {
-          "bluetoothAlwaysPermission": "This app uses Bluetooth to scan for and connect to ESP32 devices.",
+          "bluetoothAlwaysPermission": "PantrySense uses Bluetooth to connect to smart containers.",
           "modes": [
-            "peripheral",
             "central"
           ],
           "backgroundModes": [
@@ -58,11 +62,12 @@
         "react-native-permissions",
         {
           "ios": {
-            "locationWhenInUsePermission": "PantrySense needs location access to scan for Bluetooth devices."
+            "locationWhenInUsePermission": "PantrySense needs location to scan BLE devices."
           },
           "android": {
-            "bluetoothConnectPermission": "PantrySense needs Bluetooth access to connect to smart containers.",
-            "accessFineLocationPermission": "PantrySense needs location access to scan for Bluetooth devices."
+            "bluetoothConnectPermission": "Bluetooth connection required for scanning and control.",
+            "bluetoothScanPermission": "PantrySense needs permission to scan for Bluetooth devices.",
+            "accessFineLocationPermission": "Location is used to find nearby BLE devices."
           }
         }
       ]
