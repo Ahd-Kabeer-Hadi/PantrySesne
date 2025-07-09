@@ -88,7 +88,7 @@ export default function MotherHubSetupScreen({
           variant="primary"
           size="lg"
           onPress={onAddContainers || onDone}
-          className="shadow-lg"
+          className=""
         >
           <View className="flex-row items-center justify-center">
             <Ionicons name="add-circle" size={20} color="#FFFFFF" className="mr-2" />
@@ -102,7 +102,7 @@ export default function MotherHubSetupScreen({
           variant="secondary"
           size="lg"
           onPress={onDone}
-          className="shadow-lg"
+          className=""
         >
           <View className="flex-row items-center justify-center">
             <Ionicons name="home" size={20} color="#8fb716" className="mr-2" />
@@ -162,7 +162,7 @@ export default function MotherHubSetupScreen({
         variant="secondary"
         size="lg"
         onPress={onRetry}
-        className="shadow-lg"
+        className=""
       >
         <View className="flex-row items-center justify-center">
           <Ionicons name="refresh" size={20} color="#0c0b0e" className="mr-2" />
@@ -180,7 +180,7 @@ export default function MotherHubSetupScreen({
         <View className="flex-1 px-6 pt-8 pb-6">
           {/* Header */}
           <View className="items-center mb-8">
-            <View className={`w-20 h-20 rounded-2xl shadow-lg mb-6 items-center justify-center ${
+            <View className={`w-20 h-20 rounded-2xl mb-6 items-center justify-center ${
               status === "success" ? "bg-success" : 
               status === "error" ? "bg-accent" : "bg-primary"
             }`}>

@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState, useEffect } from "react";
-import { View, TouchableOpacity } from "react-native";
+import { View, TouchableOpacity, FlatList, Animated } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedContainer, ThemedCard, ThemedText, ThemedButton, ThemedBadge } from "../components/ThemedComponents";
 
@@ -18,6 +18,8 @@ interface MotherHubDiscoveryScreenProps {
   onSelect: (device: BLEDevice) => void;
 }
 
+type ViewState = 'empty' | 'scanning' | 'error' | 'success';
+
 export default function MotherHubDiscoveryScreen({ 
   devices, 
   scanning, 
@@ -25,37 +27,32 @@ export default function MotherHubDiscoveryScreen({
   onSelect 
 }: MotherHubDiscoveryScreenProps) {
   
-  // Component-level state for user feedback
-  const [isScanning, setIsScanning] = useState(false);
+  const [isScanning, setIsScanning] = useState<boolean>(false);
   const [scanError, setScanError] = useState<string | null>(null);
   
   // Watch for changes in devices to provide accurate feedback when scan completes
   useEffect(() => {
     console.log('🔍 ScanMotherScreen: State change - isScanning:', isScanning, 'devices.length:', devices.length);
     
-    // If we were scanning and now have devices, scan completed successfully
     if (isScanning && devices.length > 0) {
       console.log('🔍 ScanMotherScreen: Scan completed successfully with devices');
       setIsScanning(false);
       setScanError(null);
-    }
-    // If we were scanning and still no devices after a delay, show helpful message
-    else if (isScanning && devices.length === 0) {
+    } else if (isScanning && devices.length === 0) {
       console.log('🔍 ScanMotherScreen: Still scanning, setting timeout for completion');
-      // Add a small delay to allow for devices to be found
       const timer = setTimeout(() => {
         if (isScanning && devices.length === 0) {
           console.log('🔍 ScanMotherScreen: Scan timeout - no devices found');
           setIsScanning(false);
-          setScanError('No SmartPot Master devices found. Please check if your device is powered on and in range.');
+          setScanError('No PantrySense Hub devices found. Please check if your device is powered on and in range.');
         }
-      }, 8000); // Match BLE service timeout
+      }, 8000);
       
       return () => clearTimeout(timer);
     }
   }, [isScanning, devices.length]);
   
-  const handleRefresh = async () => {
+  const handleRefresh = async (): Promise<void> => {
     if (isScanning) return;
     
     console.log('🔍 ScanMotherScreen: Starting scan...');
@@ -71,280 +68,317 @@ export default function MotherHubDiscoveryScreen({
     }
   };
 
-  // Use only local state for UI feedback
-  const showScanning = isScanning;
-  const showError = scanError;
+  const getCurrentViewState = (): ViewState => {
+    if (isScanning) return 'scanning';
+    if (scanError) return 'error';
+    if (devices.length > 0) return 'success';
+    return 'empty';
+  };
 
-  const renderScanningState = () => (
-    <View className="flex-1 justify-center items-center py-12">
-      <View className="w-32 h-32 bg-primary/20 rounded-3xl items-center justify-center mb-8">
-        <View className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </View>
-      <ThemedText size="2xl" weight="bold" className="text-center mb-4">
-        Scanning for Devices
-      </ThemedText>
-      <ThemedText variant="secondary" className="text-center leading-relaxed max-w-sm mb-8">
-        Looking for SmartPot Master devices in your area...
-      </ThemedText>
-      
-      {/* Progress indicator */}
-      <View className="w-64 h-2 bg-gray-200 rounded-full mb-6 overflow-hidden">
-        <View className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }} />
-      </View>
-      
-      <View className="flex-row items-center justify-center space-x-2">
-        <View className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-        <View className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
-        <View className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
-      </View>
-      
-      <ThemedText size="sm" variant="tertiary" className="text-center mt-4">
-        This may take up to 8 seconds...
-      </ThemedText>
-    </View>
-  );
+  const getSignalStrength = (rssi: number): { label: string; color: string; bars: number } => {
+    if (rssi > -50) return { label: "Excellent", color: "#16a34a", bars: 4 };
+    if (rssi > -70) return { label: "Good", color: "#ca8a04", bars: 3 };
+    if (rssi > -90) return { label: "Fair", color: "#ea580c", bars: 2 };
+    return { label: "Poor", color: "#dc2626", bars: 1 };
+  };
 
-  const renderErrorState = () => (
-    <View className="flex-1 justify-center items-center py-12">
-      <View className="w-32 h-32 bg-accent/20 rounded-3xl items-center justify-center mb-8">
-        <Ionicons name="wifi" size={64} color="#b8b8b8" />
-      </View>
-      <ThemedText size="2xl" weight="bold" className="text-center mb-4">
-        No SmartPot Master Found
-      </ThemedText>
-      <ThemedText variant="secondary" className="text-center leading-relaxed max-w-sm mb-8">
-        {showError || "Make sure your SmartPot Master device is powered on and in provisioning mode."}
-      </ThemedText>
-      
-      {/* Troubleshooting tips */}
-      <View className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-8 w-full max-w-sm">
-        <ThemedText size="sm" weight="semibold" className="mb-3 text-gray-800">
-          Troubleshooting Tips:
-        </ThemedText>
-        <View className="space-y-2">
-          <View className="flex-row items-start">
-            <View className="w-1.5 h-1.5 bg-gray-400 rounded-full mt-2 mr-3 flex-shrink-0" />
-            <ThemedText size="sm" variant="secondary" className="flex-1">
-              Ensure Bluetooth is turned on
-            </ThemedText>
-          </View>
-          <View className="flex-row items-start">
-            <View className="w-1.5 h-1.5 bg-gray-400 rounded-full mt-2 mr-3 flex-shrink-0" />
-            <ThemedText size="sm" variant="secondary" className="flex-1">
-              Check that your device is within 10 meters
-            </ThemedText>
-          </View>
-          <View className="flex-row items-start">
-            <View className="w-1.5 h-1.5 bg-gray-400 rounded-full mt-2 mr-3 flex-shrink-0" />
-            <ThemedText size="sm" variant="secondary" className="flex-1">
-              Make sure the SmartPot Master is in setup mode
-            </ThemedText>
-          </View>
-        </View>
-      </View>
-      
-      <ThemedButton
-        variant="secondary"
-        size="lg"
-        onPress={handleRefresh}
-        className="shadow-lg"
-      >
-        <View className="flex-row items-center justify-center">
-          <Ionicons name="refresh" size={20} color="#0c0b0e" className="mr-2" />
-          <ThemedText size="lg" weight="semibold" variant="secondary">
-            Try Again
-          </ThemedText>
-        </View>
-      </ThemedButton>
-    </View>
-  );
+  const isPantrySenseDevice = (deviceName: string): boolean => {
+    return deviceName.includes('PantrySense') || 
+           deviceName.includes('SmartPotMaster') || 
+           deviceName.includes('SmartPot');
+  };
 
-  const renderSuccessState = () => (
-    <View className="flex-1">
-      {/* Status Header */}
-      <View className="flex-row items-center justify-between mb-6">
-        <View>
-          <ThemedText size="xl" weight="semibold" className="mb-1">
-            Available Devices
-          </ThemedText>
-          <ThemedText variant="secondary">
-            {devices.length} device{devices.length !== 1 ? 's' : ''} found
-          </ThemedText>
-        </View>
-        <ThemedBadge variant="success" size="sm">
-          <View className="flex-row items-center">
-            <View className="w-2 h-2 bg-green-500 rounded-full mr-1" />
-            Success
-          </View>
-        </ThemedBadge>
-      </View>
-
-      {/* Success message */}
-      <View className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
-        <View className="flex-row items-center">
-          <Ionicons name="checkmark-circle" size={24} color="#8fb716" className="mr-3" />
-          <View className="flex-1">
-            <ThemedText size="sm" weight="semibold" className="text-green-800 mb-1">
-              Scan Completed Successfully
-            </ThemedText>
-            <ThemedText size="sm" variant="secondary" className="text-green-700">
-              Found {devices.length} SmartPot Master device{devices.length > 1 ? 's' : ''} ready for connection
-            </ThemedText>
-          </View>
-        </View>
-      </View>
-
-      {/* Devices List */}
-      <View className="flex-1">
-        {devices.map(renderDeviceCard)}
-      </View>
-
-      {/* Action Buttons */}
-      <View className="space-y-3">
-        <ThemedButton
-          variant="secondary"
-          onPress={handleRefresh}
-          className="shadow-lg"
-        >
-          <View className="flex-row items-center justify-center">
-            <Ionicons name="refresh" size={20} color="#8fb716" className="mr-2" />
-            <ThemedText variant="primary" weight="semibold">Scan Again</ThemedText>
-          </View>
-        </ThemedButton>
-        
-        <ThemedText size="sm" variant="tertiary" className="text-center">
-          Tap on a device to connect and configure WiFi
-        </ThemedText>
-      </View>
-    </View>
-  );
-
-  const renderDeviceCard = (device: BLEDevice) => {
-    const signalStrength = device.rssi > -50 ? "Excellent" : 
-                          device.rssi > -70 ? "Good" : 
-                          device.rssi > -90 ? "Fair" : "Poor";
+  const SignalBars = ({ rssi }: { rssi: number }) => {
+    const { color, bars } = getSignalStrength(rssi);
     
-    const signalColor = device.rssi > -50 ? "#8fb716" : 
-                       device.rssi > -70 ? "#e4fa5b" : 
-                       device.rssi > -90 ? "#b8b8b8" : "#dc2626";
+    return (
+      <View className="flex-row items-end">
+        {Array.from({ length: 4 }, (_, i) => (
+          <View 
+            key={i}
+            className={`w-1 rounded-full mr-0.5`}
+            style={{ 
+              height: 4 + (i * 2),
+              backgroundColor: i < bars ? color : '#d1d5db'
+            }}
+          />
+        ))}
+      </View>
+    );
+  };
 
-    // Check if this is a SmartPotMaster device
-    const isSmartPotMaster = device.name.includes('SmartPotMaster') || device.name.includes('SmartPot');
-    const deviceType = isSmartPotMaster ? "SmartPot Master" : "Unknown Device";
-
+  const DeviceCard = ({ device }: { device: BLEDevice }) => {
+    const { label: signalLabel } = getSignalStrength(device.rssi);
+    const isPantrySense = isPantrySenseDevice(device.name);
+    const deviceType = isPantrySense ? "PantrySense Hub" : "Unknown Device";
+    
     return (
       <ThemedCard
-        key={device.id}
         variant="elevated"
         onPress={() => onSelect(device)}
-        className="mb-4"
+        className="mb-3 border border-gray-100"
       >
-        <View className="flex-row items-center justify-between">
-          <View className="flex-row items-center flex-1">
-            <View className="w-12 h-12 bg-primary/20 rounded-xl items-center justify-center mr-4">
-              <Ionicons 
-                name={isSmartPotMaster ? "wifi" : "bluetooth"} 
-                size={24} 
-                color="#8fb716" 
-              />
-            </View>
-            <View className="flex-1">
-              <ThemedText size="lg" weight="semibold" className="mb-1">
-                {device.name || "Unknown Device"}
-              </ThemedText>
-              <View className="flex-row items-center mb-1">
-                <ThemedBadge variant="secondary" size="sm">
-                  {deviceType}
-                </ThemedBadge>
-              </View>
-              <View className="flex-row items-center">
-                <ThemedText size="sm" variant="secondary" className="mr-3">
-                  Signal: {signalStrength}
-                </ThemedText>
-                <View 
-                  className="w-2 h-2 rounded-full mr-1"
-                  style={{ backgroundColor: signalColor }}
-                />
-                <ThemedText size="sm" variant="secondary">
-                  {device.rssi} dBm
-                </ThemedText>
-              </View>
-            </View>
-          </View>
-          <View className="items-end">
-            <ThemedBadge 
-              variant={device.isConnectable ? "success" : "warning"}
-              size="sm"
-            >
-              {device.isConnectable ? "Available" : "Busy"}
-            </ThemedBadge>
+        <View className="flex-row items-center p-1">
+          <View className="w-12 h-12 bg-primary/10 rounded-xl items-center justify-center mr-4">
             <Ionicons 
-              name="chevron-forward" 
-              size={20} 
-              color="#6b7280" 
-              className="mt-2"
+              name={isPantrySense ? "storefront" : "bluetooth"} 
+              size={24} 
+              color="#8fb716" 
             />
           </View>
+          
+          <View className="flex-1">
+            <View className="flex-row items-center justify-between mb-1">
+              <ThemedText size="base" weight="semibold" className="flex-1" numberOfLines={1}>
+                {device.name || "Unknown Device"}
+              </ThemedText>
+              <ThemedBadge 
+                variant={device.isConnectable ? "success" : "warning"}
+                size="sm"
+              >
+                {device.isConnectable ? "Ready" : "Busy"}
+              </ThemedBadge>
+            </View>
+            
+            <View className="flex-row items-center justify-between">
+              <ThemedText size="sm" variant="secondary">
+                {deviceType}
+              </ThemedText>
+              
+              <View className="flex-row items-center">
+                <SignalBars rssi={device.rssi} />
+                <ThemedText size="sm" variant="secondary" className="ml-2">
+                  {signalLabel}
+                </ThemedText>
+              </View>
+            </View>
+          </View>
+          
+          <Ionicons 
+            name="chevron-forward" 
+            size={16} 
+            color="#9ca3af" 
+            className="ml-2"
+          />
         </View>
       </ThemedCard>
     );
   };
 
-  const renderEmptyState = () => (
-    <View className="flex-1 justify-center items-center py-12">
-      <View className="w-32 h-32 bg-accent/20 rounded-3xl items-center justify-center mb-8">
-        <Ionicons name="wifi" size={64} color="#b8b8b8" />
+  const ScanningView = () => (
+    <View className="flex-1 justify-center items-center px-6">
+      <View className="w-24 h-24 bg-primary/10 rounded-full items-center justify-center mb-6">
+        <Ionicons name="search" size={32} color="#8fb716" />
       </View>
-      <ThemedText size="2xl" weight="bold" className="text-center mb-4">
-        No SmartPot Master Found
+      
+      <ThemedText size="xl" weight="bold" className="text-center mb-2">
+        Discovering Devices
       </ThemedText>
-      <ThemedText variant="secondary" className="text-center leading-relaxed max-w-sm mb-8">
-        Make sure your SmartPot Master device is powered on and in provisioning mode. Try refreshing the scan.
+      <ThemedText variant="secondary" className="text-center mb-8 max-w-sm">
+        Scanning for your PantrySense Hub nearby...
       </ThemedText>
+      
+      <View className="flex-row space-x-1 mb-4">
+        {[0, 1, 2].map((i) => (
+          <View 
+            key={i}
+            className="w-2 h-2 bg-primary rounded-full animate-pulse"
+            style={{ animationDelay: `${i * 0.3}s` }}
+          />
+        ))}
+      </View>
+      
+      <ThemedText size="sm" variant="tertiary" className="text-center">
+        This usually takes a few seconds
+      </ThemedText>
+    </View>
+  );
+
+  const ErrorView = () => (
+    <View className="flex-1 justify-center items-center px-6">
+      <View className="w-24 h-24 bg-red-50 rounded-full items-center justify-center mb-6">
+        <Ionicons name="alert-circle-outline" size={32} color="#dc2626" />
+      </View>
+      
+      <ThemedText size="xl" weight="bold" className="text-center mb-2">
+        No Devices Found
+      </ThemedText>
+      <ThemedText variant="secondary" className="text-center mb-8 max-w-sm">
+        {scanError || "We couldn't find any PantrySense Hub devices in your area."}
+      </ThemedText>
+      
+      <View className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8 w-full max-w-sm">
+        <View className="flex-row items-center mb-3">
+          <Ionicons name="information-circle" size={16} color="#3b82f6" />
+          <ThemedText size="sm" weight="semibold" className="text-blue-800 ml-2">
+            Quick Tips
+        </ThemedText>
+        </View>
+        <View className="space-y-2">
+          {[
+            "Bluetooth is enabled on your phone",
+            "PantrySense Hub is powered on and nearby",
+            "Device is in pairing mode (LED blinking)"
+          ].map((tip, index) => (
+            <View key={index} className="flex-row items-start">
+              <Ionicons name="checkmark-circle" size={14} color="#8fb716" className="mr-2 mt-0.5" />
+            <ThemedText size="sm" variant="secondary" className="flex-1">
+                {tip}
+            </ThemedText>
+          </View>
+          ))}
+        </View>
+      </View>
       
       <ThemedButton
         variant="secondary"
         size="lg"
         onPress={handleRefresh}
-        className="shadow-lg"
+        className="w-full max-w-xs"
       >
         <View className="flex-row items-center justify-center">
-          <Ionicons name="refresh" size={20} color="#0c0b0e" className="mr-2" />
-          <ThemedText size="lg" weight="semibold" variant="secondary">
-            Refresh Scan
+          <Ionicons name="refresh" size={18} color="#0c0b0e" />
+          <ThemedText size="base" weight="semibold" variant="secondary" className="ml-2">
+            Scan Again
           </ThemedText>
         </View>
       </ThemedButton>
     </View>
   );
 
-  return (
-    <SafeAreaView className="flex-1">
-      <ThemedContainer className="flex-1">
-        <View className="flex-1 px-6 pt-8 pb-6">
-          {/* Header */}
-          <View className="items-center mb-8">
-            <View className="w-20 h-20 bg-primary rounded-2xl shadow-lg mb-6 items-center justify-center">
-              <Ionicons name="wifi" size={36} color="#FFFFFF" />
-            </View>
-            <ThemedText size="2xl" weight="bold" className="text-center mb-3">
-              Find SmartPot Master
+  const SuccessView = () => (
+    <View className="flex-1">
+      <View className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
+        <View className="flex-row items-center">
+          <View className="w-8 h-8 bg-green-100 rounded-full items-center justify-center mr-3">
+            <Ionicons name="checkmark-circle" size={16} color="#16a34a" />
+          </View>
+          <View className="flex-1">
+            <ThemedText size="base" weight="semibold" className="text-green-800">
+              {devices.length} Device{devices.length !== 1 ? 's' : ''} Found
             </ThemedText>
-            <ThemedText variant="secondary" className="text-center max-w-xs">
-              Connect to your SmartPot Master device to set up WiFi
+            <ThemedText size="sm" variant="secondary" className="text-green-700">
+              Ready to connect and configure
+            </ThemedText>
+          </View>
+        </View>
+      </View>
+
+      <FlatList
+        data={devices}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <DeviceCard device={item} />}
+        contentContainerStyle={{ paddingBottom: 20 }}
+        showsVerticalScrollIndicator={false}
+      />
+
+      <View className="border-t border-gray-100 pt-4 mt-4">
+        <ThemedButton
+          variant="secondary"
+          onPress={handleRefresh}
+          className="mb-3"
+        >
+          <View className="flex-row items-center justify-center">
+            <Ionicons name="refresh" size={18} color="#8fb716" />
+            <ThemedText variant="primary" weight="semibold" className="ml-2">
+              Scan for More Devices
+            </ThemedText>
+          </View>
+        </ThemedButton>
+        
+        <ThemedText size="sm" variant="tertiary" className="text-center">
+          Tap any device above to begin setup
+        </ThemedText>
+      </View>
+    </View>
+  );
+
+  const EmptyView = () => (
+    <View className="flex-1 justify-center items-center px-6">
+      <View className="w-24 h-24 bg-gray-50 rounded-full items-center justify-center mb-6">
+        <Ionicons name="search" size={32} color="#9ca3af" />
+      </View>
+      
+      <ThemedText size="xl" weight="bold" className="text-center mb-2">
+        Let's Find Your Device
+      </ThemedText>
+      <ThemedText variant="secondary" className="text-center mb-8 max-w-sm">
+        Tap the button below to search for your PantrySense Hub device
+      </ThemedText>
+      
+      <View className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8 w-full max-w-sm">
+        <View className="flex-row items-center mb-3">
+          <Ionicons name="information-circle" size={16} color="#3b82f6" />
+          <ThemedText size="sm" weight="semibold" className="text-blue-800 ml-2">
+            Before You Start
+          </ThemedText>
+            </View>
+        <View className="space-y-2">
+          {[
+            "Power on your PantrySense Hub device",
+            "Look for a blinking LED (pairing mode)",
+            "Keep your phone within 10 feet of the hub"
+          ].map((step, index) => (
+            <View key={index} className="flex-row items-start">
+              <ThemedText size="sm" weight="semibold" className="text-blue-800 mr-2">
+                {index + 1}.
+              </ThemedText>
+              <ThemedText size="sm" variant="secondary" className="flex-1">
+                {step}
+                </ThemedText>
+            </View>
+          ))}
+        </View>
+      </View>
+      
+      <ThemedButton
+        variant="primary"
+        size="lg"
+        onPress={handleRefresh}
+        className="w-full max-w-xs"
+      >
+        <View className="flex-row items-center justify-center">
+          <Ionicons name="search" size={18} color="#ffffff" />
+          <ThemedText size="base" weight="semibold" className="text-white ml-2">
+            Start Scanning
+          </ThemedText>
+        </View>
+      </ThemedButton>
+    </View>
+  );
+
+  const renderCurrentView = () => {
+    switch (getCurrentViewState()) {
+      case 'scanning':
+        return <ScanningView />;
+      case 'error':
+        return <ErrorView />;
+      case 'success':
+        return <SuccessView />;
+      case 'empty':
+      default:
+        return <EmptyView />;
+    }
+  };
+
+  return (
+    <SafeAreaView className="flex-1 bg-white">
+      <ThemedContainer className="flex-1">
+        <View className="flex-1 px-6 pt-6 pb-6">
+          {/* Simplified Header */}
+          <View className="items-center mb-8">
+            <View className="w-16 h-16 bg-primary rounded-xl mb-4 items-center justify-center">
+              <Ionicons name="leaf" size={24} color="#FFFFFF" />
+            </View>
+            <ThemedText size="xl" weight="bold" className="text-center mb-2">
+              Device Discovery
+            </ThemedText>
+            <ThemedText variant="secondary" className="text-center max-w-sm">
+              Connect your SmartPot Master to get started with automated Pantry Management
             </ThemedText>
           </View>
 
-          {/* Content */}
-          {showScanning ? (
-            renderScanningState()
-          ) : showError ? (
-            renderErrorState()
-          ) : devices.length > 0 ? (
-            renderSuccessState()
-          ) : (
-            renderEmptyState()
-          )}
+          {renderCurrentView()}
         </View>
       </ThemedContainer>
     </SafeAreaView>

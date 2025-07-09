@@ -6,13 +6,13 @@ const storage = new MMKV();
 
 const ONBOARDED_KEY = 'onboarded';
 
-interface ProvisioningDevice {
+export interface ProvisioningDevice {
   id: string;
   name: string;
   device: Device;
 }
 
-interface SmartPot {
+export interface SmartPot {
   id: string;
   name: string;
   weight: string;

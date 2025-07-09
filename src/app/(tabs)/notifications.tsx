@@ -156,7 +156,7 @@ export default function NotificationsScreen() {
                   Stay updated on your pantry
                 </ThemedText>
               </View>
-              <TouchableOpacity className="w-12 h-12 bg-primary rounded-2xl items-center justify-center shadow-md">
+              <TouchableOpacity className="w-12 h-12 bg-primary rounded-2xl items-center justify-center">
                 <Ionicons name="settings" size={24} color="#FFFFFF" />
               </TouchableOpacity>
             </View>

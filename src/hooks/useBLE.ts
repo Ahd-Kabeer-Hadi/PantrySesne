@@ -4,11 +4,12 @@ import * as bleService from '../services/ble';
 import { useBLEStore } from '../stores/bleStore';
 import { parseError, AppError } from '../utils/errorHandler';
 import { useBLEPermissions } from './useBLEPermissions';
+import type { ProvisioningDevice, SmartPot } from '../stores/bleStore';
 
 // BLE Service and Characteristic UUIDs for SmartPot Master
-const SMART_POT_MASTER_SERVICE = "12345678-1234-1234-1234-123456789abc";
-const WIFI_SSID_CHARACTERISTIC = "87654321-4321-4321-4321-cba987654321";
-const WIFI_PASSWORD_CHARACTERISTIC = "11111111-2222-3333-4444-555555555555";
+const SMART_POT_MASTER_SERVICE = "12340000-1234-1234-1234-123456789abc";
+const WIFI_SSID_CHARACTERISTIC = "12340001-1234-1234-1234-123456789abc";
+const WIFI_PASSWORD_CHARACTERISTIC = "12340002-1234-1234-1234-123456789abc";
 const WIFI_STATUS_CHARACTERISTIC = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
 
 // BLE Service and Characteristic UUIDs for Smart Pots
@@ -55,7 +56,7 @@ export function useBLE() {
     error: permissionError,
   } = useBLEPermissions();
 
-  // ===== PROVISIONING DEVICES (SmartPotMaster) =====
+  // ===== PROVISIONING DEVICES (SmartPot Master) =====
   
   // Scan for WiFi provisioning devices
   const scanForProvisioningDevices = async () => {
@@ -82,12 +83,16 @@ export function useBLE() {
     
     bleService.scanForProvisioningDevices(
       (device: Device) => {
-        console.log('🔍 BLE: Found provisioning device:', device.name || device.id);
-        setProvisioningDevices(prevDevices => [...prevDevices, { 
-          id: device.id, 
-          name: device.name || device.localName || device.id, 
-          device 
-        }]);
+        if ((device.name || device.localName) === 'SmartPot Master') {
+          const currentDevices = useBLEStore.getState().provisioningDevices;
+          if (!currentDevices.some(d => d.id === device.id)) {
+            setProvisioningDevices([...currentDevices, { 
+              id: device.id, 
+              name: device.name || device.localName || device.id, 
+              device 
+            }]);
+          }
+        }
       },
       (err: string) => {
         console.log('🔍 BLE: Provisioning scan error:', err);
@@ -101,48 +106,72 @@ export function useBLE() {
   };
 
   // Connect to provisioning device
-  const connectToProvisioningDevice = async (id: string) => {
+  const connectToProvisioningDevice = async (id: string, maxRetries = 3, retryDelay = 1200) => {
     console.log('🔗 BLE: Connecting to provisioning device:', id);
+    let lastError = null;
+    // Stop any ongoing scan before connecting
     try {
-      const device = await bleService.connectToDevice(id);
-      console.log('🔗 BLE: Connected to provisioning device successfully');
-      setProvisioning(true);
-      return device;
-    } catch (e: any) {
-      console.log('🔗 BLE: Provisioning device connection failed:', e.message);
-      const appError = parseError(e.message);
-      setError(appError.userMessage);
-      setProvisioning(false);
-      return null;
+      const manager = bleService.initManager();
+      manager.stopDeviceScan && manager.stopDeviceScan();
+    } catch (e) {
+      console.log('🔗 BLE: Error stopping scan before connect:', e);
     }
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // Destroy and re-init BLEManager before each attempt
+        bleService.destroyManager();
+        bleService.initManager();
+        const device = await bleService.connectToDevice(id);
+        console.log('🔗 BLE: Connected to provisioning device successfully');
+        setConnectedProvisioningDevice(device); // <-- update global state
+        setProvisioning('pending');
+        return device;
+      } catch (e: any) {
+        lastError = e;
+        console.log(`🔗 BLE: Provisioning device connection failed (attempt ${attempt}):`, e.message);
+        if (attempt < maxRetries) {
+          await new Promise(res => setTimeout(res, retryDelay));
+        }
+      }
+    }
+    // All attempts failed
+    const errorMsg = lastError?.message || 'Unknown connection error';
+    const appError = parseError(errorMsg);
+    setError(appError.userMessage || 'Failed to connect to device. Please try again.');
+    setProvisioning('idle');
+    setConnectedProvisioningDevice(null); // <-- clear on failure
+    return null;
   };
 
   // Provision WiFi to device
   const provisionWiFi = async (ssid: string, password: string) => {
     console.log('📡 BLE: Provisioning WiFi to device - SSID:', ssid);
-    if (provisioningDevices.length === 0) {
+    if (!connectedProvisioningDevice) { // <-- use connected device
       console.log('📡 BLE: No provisioning device connected');
       const appError = parseError('No device connected');
       setError(appError.userMessage);
-      setProvisioning(false);
+      setProvisioning('idle');
       return false;
     }
-    setProvisioning(true);
+    setProvisioning('pending');
     setError(null);
     try {
-      await bleService.provisionWiFi(provisioningDevices[0].device, ssid, password);
+      await bleService.provisionWiFi(connectedProvisioningDevice, ssid, password); // <-- use connected device
       console.log('📡 BLE: WiFi provisioning successful');
-      setProvisioning(false);
+      setProvisioning('success');
       addSmartPot({ 
-        id: provisioningDevices[0].device.id, 
-        name: provisioningDevices[0].device.name || provisioningDevices[0].device.id 
+        id: connectedProvisioningDevice.id, 
+        name: connectedProvisioningDevice.name || connectedProvisioningDevice.id,
+        weight: '0g',
+        device: connectedProvisioningDevice,
+        lastSeen: Date.now()
       });
       return true;
     } catch (e: any) {
       console.log('📡 BLE: WiFi provisioning failed:', e.message);
       const appError = parseError(e.message);
       setError(appError.userMessage);
-      setProvisioning(false);
+      setProvisioning('error');
       return false;
     }
   };
@@ -174,10 +203,11 @@ export function useBLE() {
     bleService.scanForSmartPots(
       (device: Device) => {
         console.log('🔍 BLE: Found Smart Pot:', device.name || device.id);
-        setSmartPots(prevDevices => [...prevDevices, { 
+        const currentPots = useBLEStore.getState().smartPots;
+        setSmartPots([...currentPots, { 
           id: device.id, 
           name: device.name || device.localName || device.id,
-          weight: '0g', // Default weight
+          weight: '0g',
           device,
           lastSeen: Date.now()
         }]);
@@ -199,13 +229,13 @@ export function useBLE() {
     try {
       const device = await bleService.connectToDevice(id);
       console.log('🔗 BLE: Connected to Smart Pot successfully');
-      setConnectedSmartPot(true);
+      setConnectedSmartPot(device); // <-- set to Device
       return device;
     } catch (e: any) {
       console.log('🔗 BLE: Smart Pot connection failed:', e.message);
       const appError = parseError(e.message);
       setError(appError.userMessage);
-      setConnectedSmartPot(false);
+      setConnectedSmartPot(null); // <-- set to null
       return null;
     }
   };
@@ -223,9 +253,10 @@ export function useBLE() {
       const weight = await bleService.readWeightData(smartPots[0].device);
       console.log('📊 BLE: Weight read successfully:', weight);
       if (weight) {
-        setSmartPots(prevDevices => prevDevices.map(device =>
+        const updatedPots = smartPots.map(device =>
           device.id === smartPots[0].id ? { ...device, weight: weight } : device
-        ));
+        );
+        setSmartPots(updatedPots);
       }
       return weight;
     } catch (e: any) {
@@ -240,18 +271,17 @@ export function useBLE() {
   
   // Disconnect
   const disconnect = async () => {
-    if (provisioningDevices.length > 0) {
+    if (connectedProvisioningDevice) {
       console.log('🔌 BLE: Disconnecting provisioning device');
       try {
-        await bleService.disconnectDevice(provisioningDevices[0].device);
+        await bleService.disconnectDevice(connectedProvisioningDevice);
         console.log('🔌 BLE: Provisioning device disconnected successfully');
       } catch (e: any) {
         console.log('🔌 BLE: Provisioning device disconnect error (non-critical):', e.message);
       } finally {
-        setProvisioningDevices([]);
+        setConnectedProvisioningDevice(null); // <-- clear on disconnect
       }
     }
-    
     if (smartPots.length > 0) {
       console.log('🔌 BLE: Disconnecting Smart Pot');
       try {

@@ -33,15 +33,17 @@ export function scanForProvisioningDevices(
   onDone: () => void
 ) {
   console.log('🔧 BLE Service: Starting scan for provisioning devices...');
-  const mgr = initManager();
+  
+  const BleMngr = initManager();
   const discovered: { [id: string]: boolean } = {};
   
-  const subscription = mgr.startDeviceScan(
+  const subscription = BleMngr.startDeviceScan(
     [PROVISIONING_SERVICE_UUID],
     null,
     (error, device) => {
       if (error) {
         console.log('🔧 BLE Service: Provisioning scan error:', error.message);
+        BleMngr.stopDeviceScan();
         onError(error.message);
         (subscription as any)?.remove?.();
         (subscription as any)?.stop?.();
@@ -59,6 +61,7 @@ export function scanForProvisioningDevices(
   // Stop scan after 8 seconds
   setTimeout(() => {
     console.log('🔧 BLE Service: Stopping provisioning scan after timeout');
+    BleMngr.stopDeviceScan();
     (subscription as any)?.remove?.();
     (subscription as any)?.stop?.();
     onDone();
@@ -74,10 +77,11 @@ export function scanForSmartPots(
   onDone: () => void
 ) {
   console.log('🔧 BLE Service: Starting scan for Smart Pots...');
-  const mgr = initManager();
+  destroyManager();
+  const BleMngr = initManager();
   const discovered: { [id: string]: boolean } = {};
   
-  const subscription = mgr.startDeviceScan(
+  const subscription = BleMngr.startDeviceScan(
     null, // Scan all devices, filter by name
     null,
     (error, device) => {
@@ -114,10 +118,10 @@ export function scanForSmartPots(
 // Connect to a device
 export async function connectToDevice(deviceId: string) {
   console.log('🔧 BLE Service: Connecting to device:', deviceId);
-  const mgr = initManager();
+  const BleMngr = initManager();
   
   try {
-    const device = await mgr.connectToDevice(deviceId, { autoConnect: false });
+    const device = await BleMngr.connectToDevice(deviceId, { autoConnect: false });
     console.log('🔧 BLE Service: Connected to device, discovering services...');
     await device.discoverAllServicesAndCharacteristics();
     console.log('🔧 BLE Service: Services discovered successfully');
