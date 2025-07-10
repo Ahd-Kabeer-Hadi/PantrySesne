@@ -14,7 +14,7 @@ import {
 import { useBLEStore } from "../stores/bleStore";
 import { useBLEPermissions } from "../hooks/useBLEPermissions";
 import { getLastScanTime } from "../lib/mmkvUtils";
-const SCAN_COOLDOWN_MS = 60000; // 1 minute
+import { LONG_COOLDOWN_MS } from "../hooks/useBLE";
 
 interface BLEDevice {
   id: string;
@@ -84,7 +84,7 @@ export default function MotherHubDiscoveryScreen({
       const lastScan = getLastScanTime();
       if (lastScan) {
         const now = Date.now();
-        const remaining = SCAN_COOLDOWN_MS - (now - lastScan);
+        const remaining = LONG_COOLDOWN_MS - (now - lastScan);
         setCooldown(remaining > 0 ? remaining : 0);
       } else {
         setCooldown(0);

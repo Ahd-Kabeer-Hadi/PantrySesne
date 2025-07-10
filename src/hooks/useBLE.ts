@@ -32,9 +32,10 @@ function getBLEManager(): BleManager {
 }
 
 // Adaptive cooldown: 3s if no devices found, 15s if devices found
-const SHORT_COOLDOWN_MS = 3000;
-const LONG_COOLDOWN_MS = 15000;
+export const SHORT_COOLDOWN_MS = 3000;
+export const LONG_COOLDOWN_MS = 15000;
 let lastCooldownMs = SHORT_COOLDOWN_MS;
+
 
 export function useBLE() {
   const manager = getBLEManager();
