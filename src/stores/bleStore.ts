@@ -53,7 +53,7 @@ interface BLEState {
 
   // BLE state actions
   setIsScanning: (isScanning: boolean) => void;
-  setDevices: (devices: BLEDevice[]) => void;
+  setDevices: (devices: BLEDevice[] | ((prev: BLEDevice[]) => BLEDevice[])) => void;
   setSelectedDevice: (device: Device | null) => void;
 
   // Provisioning actions

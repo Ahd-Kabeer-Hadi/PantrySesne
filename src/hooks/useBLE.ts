@@ -88,7 +88,7 @@ export function useBLE() {
         !knownIds.current.has(scannedDevice.id)
       ) {
         knownIds.current.add(scannedDevice.id);
-        setDevices((prev) => {
+        setDevices((prev: BLEDevice[]) => {
           if (prev.some((d) => d.id === scannedDevice.id)) return prev;
           return [
             ...prev,
