@@ -13,6 +13,8 @@ import {
 } from "../components/ThemedComponents";
 import { useBLEStore } from "../stores/bleStore";
 import { useBLEPermissions } from "../hooks/useBLEPermissions";
+import { getLastScanTime } from '../lib/mmkvUtils';
+const SCAN_COOLDOWN_MS = 60000; // 1 minute
 
 interface BLEDevice {
   id: string;
@@ -40,6 +42,7 @@ export default function MotherHubDiscoveryScreen({
     error: permissionsError,
     requestPermissions,
   } = useBLEPermissions();
+  const [cooldown, setCooldown] = useState<number>(0);
 
   useEffect(() => {
     console.log(
@@ -73,8 +76,24 @@ export default function MotherHubDiscoveryScreen({
     }
   }, [permissionsError]);
 
+  useEffect(() => {
+    const checkCooldown = () => {
+      const lastScan = getLastScanTime();
+      if (lastScan) {
+        const now = Date.now();
+        const remaining = SCAN_COOLDOWN_MS - (now - lastScan);
+        setCooldown(remaining > 0 ? remaining : 0);
+      } else {
+        setCooldown(0);
+      }
+    };
+    checkCooldown();
+    const interval = setInterval(checkCooldown, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   const handleRefresh = async (): Promise<void> => {
-    if (isScanning) return;
+    if (isScanning || cooldown > 0) return;
     setScanError(null);
     console.log("🔍 ScanMotherScreen: Starting scan...");
     try {
@@ -411,6 +430,7 @@ export default function MotherHubDiscoveryScreen({
           variant="secondary"
           onPress={handleRefresh}
           className="mb-3"
+          disabled={isScanning || cooldown > 0}
         >
           <View className="flex-row items-center justify-center">
             <Ionicons name="refresh" size={18} color="#8fb716" />
@@ -419,6 +439,12 @@ export default function MotherHubDiscoveryScreen({
             </ThemedText>
           </View>
         </ThemedButton>
+
+        {cooldown > 0 && (
+          <ThemedText variant="secondary" className="text-center mt-2">
+            Please wait {Math.ceil(cooldown / 1000)} seconds before scanning again.
+          </ThemedText>
+        )}
 
         <ThemedText size="sm" variant="tertiary" className="text-center">
           Tap any device above to begin setup
@@ -478,6 +504,7 @@ export default function MotherHubDiscoveryScreen({
         size="lg"
         onPress={handleRefresh}
         className="w-full max-w-xs"
+        disabled={isScanning || cooldown > 0}
       >
         <View className="flex-row items-center justify-center">
           <Ionicons name="search" size={18} color="#ffffff" />

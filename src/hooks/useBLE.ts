@@ -4,6 +4,7 @@ import { BleManager, Device, State, Subscription } from 'react-native-ble-plx';
 import { Platform } from 'react-native';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import { useBLEStore } from '../stores/bleStore'; // Optional global state (Zustand)
+import { getLastScanTime, setLastScanTime } from '../lib/mmkvUtils';
 
 export interface BLEDevice {
   id: string;
@@ -29,6 +30,8 @@ function getBLEManager(): BleManager {
   }
   return bleManagerInstance;
 }
+
+const SCAN_COOLDOWN_MS = 60000; // 1 minute cooldown between scans
 
 export function useBLE() {
   const manager = getBLEManager();
@@ -66,8 +69,13 @@ export function useBLE() {
   const startScan = async (): Promise<void> => {
     if (isScanning || !isReady) return;
 
-    // Permissions are now handled in the UI. Assume granted here.
-    // Removed redundant permission check.
+    // MMKV: Debounce scan if recently scanned
+    const lastScan = getLastScanTime();
+    const now = Date.now();
+    if (lastScan && now - lastScan < SCAN_COOLDOWN_MS) {
+      console.log('⏳ Scan skipped: cooldown active');
+      return;
+    }
 
     console.log('🔍 Starting BLE Scan...');
     knownIds.current.clear();
@@ -107,7 +115,8 @@ export function useBLE() {
     scanTimer.current = setTimeout(() => {
       console.log('⏱️ Scan timeout');
       stopScan();
-      setIsScanning(false)
+      setIsScanning(false);
+      setLastScanTime(Date.now()); // MMKV: Record scan time after scan completes
     }, 8000) as unknown as NodeJS.Timeout;
   };
 
@@ -123,6 +132,8 @@ export function useBLE() {
 
     try {
       stopScan();
+      // Add a short delay to let BLE stack settle
+      await new Promise(res => setTimeout(res, 300));
       console.log(`🔗 Connecting to device ${deviceId}...`);
       const device = await manager.connectToDevice(deviceId, { timeout: 8000 });
       await device.discoverAllServicesAndCharacteristics();

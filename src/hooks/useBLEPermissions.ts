@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Platform, Alert, Linking } from 'react-native';
 import { BleManager, State } from 'react-native-ble-plx';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import { getPermissionGranted, setPermissionGranted } from '../lib/mmkvUtils';
 
 export interface BLEPermissionState {
   bluetoothEnabled: boolean;
@@ -185,8 +186,29 @@ export function useBLEPermissions() {
     }
   };
 
+  // MMKV: Check if permissions are already granted
+  const checkCachedPermissions = async () => {
+    if (getPermissionGranted()) {
+      setPermissionState(prev => ({
+        ...prev,
+        bluetoothEnabled: true,
+        locationPermission: 'granted',
+        bluetoothPermission: 'granted',
+        isReady: true,
+        error: null,
+      }));
+      return true;
+    }
+    return false;
+  };
+
   // ✅ Run all permission checks and update final state
   const checkAllPermissions = async () => {
+    // MMKV: Gate with cached permissions
+    const cached = await checkCachedPermissions();
+    if (cached) {
+      return true;
+    }
     console.log('🔄 [Permissions] Starting full permission check...');
     setPermissionState(prev => ({ ...prev, error: null }));
 
@@ -197,20 +219,24 @@ export function useBLEPermissions() {
     ]);
 
     const isReady = bluetoothEnabled && locationGranted && bluetoothGranted;
-
-    console.log('✅ [Permissions Check Complete]', {
-      bluetoothEnabled,
-      locationGranted,
-      bluetoothGranted,
+    setPermissionState(prev => ({
+      ...prev,
       isReady,
-    });
-
-    setPermissionState(prev => ({ ...prev, isReady }));
+      error: isReady ? null : prev.error,
+    }));
+    if (isReady) {
+      setPermissionGranted(true);
+    }
     return isReady;
   };
 
   // ✅ Show alert if permissions are not ready
   const requestPermissions = async () => {
+    // MMKV: Gate with cached permissions
+    const cached = await checkCachedPermissions();
+    if (cached) {
+      return true;
+    }
     console.log('📢 [Permissions] Requesting user to approve permissions...');
     const isReady = await checkAllPermissions();
 
@@ -251,15 +277,16 @@ export function useBLEPermissions() {
     return () => subscription.remove();
   }, [manager]);
 
-  // ✅ Initial permission check on mount
+  // Optionally, run checkAllPermissions on mount (if you want auto-check)
   useEffect(() => {
     checkAllPermissions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {
     ...permissionState,
-    checkAllPermissions,
     requestPermissions,
+    checkAllPermissions,
     checkBluetoothState,
     checkLocationPermission,
     checkBluetoothPermission,
