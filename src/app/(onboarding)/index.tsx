@@ -12,6 +12,7 @@ import { provisionWiFi as provisionWiFiService, disconnectDevice as disconnectDe
 import { View } from "react-native";
 import { ThemedText } from "../../components/ThemedComponents";
 import { ThemedButton } from "../../components/ThemedComponents";
+import { Ionicons } from "@expo/vector-icons";
 
 const STEPS = ["welcome", "scan", "wifi", "provisioning"] as const;
 type Step = typeof STEPS[number];
@@ -24,6 +25,10 @@ export default function OnboardingFlow() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [lastDevice, setLastDevice] = useState<BLEDevice | null>(null);
+  const [connectingAttempt, setConnectingAttempt] = useState<number | null>(null);
+  const [maxAttempts, setMaxAttempts] = useState(3);
+  const [maxTimeout, setMaxTimeout] = useState(120000); // 2 minutes
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
   // BLE actions from useBLE
   const {
@@ -75,20 +80,43 @@ export default function OnboardingFlow() {
           }}
         />
         {isConnecting ? (
-          <View className="flex-1 justify-center items-center">
-            <View className="w-16 h-16 rounded-full bg-gray-200 justify-center items-center mb-6">
-              <View className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <View className="flex-1 justify-center items-center px-6">
+            <View className="w-20 h-20 rounded-full bg-primary/10 justify-center items-center mb-6 relative">
+              <View className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin absolute" />
+              {/* Animated dots for subtle progress */}
+              <View className="flex-row absolute bottom-[-24px] left-1/2 -translate-x-1/2">
+                <View className="w-2 h-2 bg-primary rounded-full mx-0.5 animate-bounce" style={{ animationDelay: '0ms' }} />
+                <View className="w-2 h-2 bg-primary/60 rounded-full mx-0.5 animate-bounce" style={{ animationDelay: '200ms' }} />
+                <View className="w-2 h-2 bg-primary/40 rounded-full mx-0.5 animate-bounce" style={{ animationDelay: '400ms' }} />
+              </View>
             </View>
-            <ThemedText size="xl" weight="bold" className="mb-2">Connecting...</ThemedText>
-            <ThemedText variant="secondary" className="text-center max-w-xs">Attempting to connect to your PantrySense Hub. Please wait.</ThemedText>
+            <ThemedText size="xl" weight="bold" className="mb-2 text-center">Hang tight!{"\n"}We're connecting to your PantrySense Hub…</ThemedText>
+            <ThemedText variant="secondary" className="text-center max-w-xs mb-4">
+              This usually takes less than a minute.
+            </ThemedText>
+            <ThemedButton
+              variant="secondary"
+              onPress={() => {
+                setIsConnecting(false);
+                setConnectionError("Connection cancelled by user.");
+              }}
+              className="px-6 py-2 rounded-lg mt-2"
+            >
+              Cancel
+            </ThemedButton>
           </View>
         ) : connectionError && lastDevice ? (
           <View className="flex-1 justify-center items-center px-6">
-            <View className="w-16 h-16 rounded-full bg-red-200 justify-center items-center mb-6">
-              <View className="w-8 h-8 border-4 border-red-500 border-t-transparent rounded-full animate-spin" />
+            <View className="w-20 h-20 rounded-full bg-muted justify-center items-center mb-6 relative">
+              <Ionicons name="sad-outline" size={48} color="#b8b8b8" />
             </View>
-            <ThemedText size="xl" weight="bold" className="mb-2 text-red-600">Connection Failed</ThemedText>
-            <ThemedText variant="secondary" className="text-center max-w-xs mb-4">{connectionError}</ThemedText>
+            <ThemedText size="xl" weight="bold" className="mb-2 text-center text-error">Couldn't connect to your PantrySense Hub.</ThemedText>
+            <ThemedText variant="secondary" className="text-center max-w-xs mb-4">
+              Let's try a few things to help you connect:
+              {"\n• Make sure your Hub is powered on and nearby."}
+              {"\n• Bluetooth is enabled on your phone."}
+              {"\n• Try moving closer to the device."}
+            </ThemedText>
             <View className="flex-row space-x-2">
               <ThemedButton
                 variant="primary"
@@ -102,12 +130,12 @@ export default function OnboardingFlow() {
                   if (connected) {
                     setStep("wifi");
                   } else {
-                    setConnectionError("Connection Failed. Please try again.");
+                    setConnectionError("Couldn't connect. Please try again.");
                   }
                 }}
                 className="px-6 py-2 rounded-lg"
               >
-                Retry
+                Try Again
               </ThemedButton>
               <ThemedButton
                 variant="secondary"

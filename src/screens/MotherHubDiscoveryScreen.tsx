@@ -13,7 +13,7 @@ import {
 } from "../components/ThemedComponents";
 import { useBLEStore } from "../stores/bleStore";
 import { useBLEPermissions } from "../hooks/useBLEPermissions";
-import { getLastScanTime } from '../lib/mmkvUtils';
+import { getLastScanTime } from "../lib/mmkvUtils";
 const SCAN_COOLDOWN_MS = 60000; // 1 minute
 
 interface BLEDevice {
@@ -78,6 +78,9 @@ export default function MotherHubDiscoveryScreen({
 
   useEffect(() => {
     const checkCooldown = () => {
+      if (cooldown) {
+        console.log("cooling down");
+      }
       const lastScan = getLastScanTime();
       if (lastScan) {
         const now = Date.now();
@@ -88,12 +91,13 @@ export default function MotherHubDiscoveryScreen({
       }
     };
     checkCooldown();
-    const interval = setInterval(checkCooldown, 1000);
+    const interval = setInterval(checkCooldown, 500);
     return () => clearInterval(interval);
   }, []);
 
   const handleRefresh = async (): Promise<void> => {
     if (isScanning || cooldown > 0) return;
+
     setScanError(null);
     console.log("🔍 ScanMotherScreen: Starting scan...");
     try {
@@ -228,8 +232,6 @@ export default function MotherHubDiscoveryScreen({
     );
   };
 
-  
-
   const ScanningView = () => (
     <View className="flex-1 justify-center items-center px-6">
       <View className="w-24 h-24 bg-primary/10 rounded-full items-center justify-center mb-6">
@@ -257,139 +259,172 @@ export default function MotherHubDiscoveryScreen({
       </ThemedText>
     </View>
   );
-//   const ErrorView = () => (
-//     <View className="flex-1 justify-center items-center px-6">
-//       <View className="w-24 h-24 bg-red-50 rounded-full items-center justify-center mb-6">
-//         <Ionicons name="alert-circle-outline" size={32} color="#dc2626" />
-//       </View>
+  //   const ErrorView = () => (
+  //     <View className="flex-1 justify-center items-center px-6">
+  //       <View className="w-24 h-24 bg-red-50 rounded-full items-center justify-center mb-6">
+  //         <Ionicons name="alert-circle-outline" size={32} color="#dc2626" />
+  //       </View>
 
-//       <ThemedText size="xl" weight="bold" className="text-center mb-2">
-//         No Devices Found
-//       </ThemedText>
-//       <ThemedText variant="secondary" className="text-center mb-8 max-w-sm">
-//         {scanError ||
-//           "We couldn&apos;t find any PantrySense Hub devices in your area."}
-//       </ThemedText>
+  //       <ThemedText size="xl" weight="bold" className="text-center mb-2">
+  //         No Devices Found
+  //       </ThemedText>
+  //       <ThemedText variant="secondary" className="text-center mb-8 max-w-sm">
+  //         {scanError ||
+  //           "We couldn&apos;t find any PantrySense Hub devices in your area."}
+  //       </ThemedText>
 
-//       <View className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8 w-full max-w-sm">
-//         <View className="flex-row items-center mb-3">
-//           <Ionicons name="information-circle" size={16} color="#3b82f6" />
-//           <ThemedText
-//             size="sm"
-//             weight="semibold"
-//             className="text-blue-800 ml-2"
-//           >
-//             Quick Tips
-//           </ThemedText>
-//         </View>
-//         <View className="space-y-2">
-//           {[
-//             "Bluetooth is enabled on your phone",
-//             "PantrySense Hub is powered on and nearby",
-//             "Device is in pairing mode (LED blinking)",
-//           ].map((tip, index) => (
-//             <View key={index} className="flex-row items-start">
-//               <Ionicons
-//                 name="checkmark-circle"
-//                 size={14}
-//                 color="#8fb716"
-//                 className="mr-2 mt-0.5"
-//               />
-//               <ThemedText size="sm" variant="secondary" className="flex-1">
-//                 {tip}
-//               </ThemedText>
-//             </View>
-//           ))}
-//         </View>
-//       </View>
+  //       <View className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8 w-full max-w-sm">
+  //         <View className="flex-row items-center mb-3">
+  //           <Ionicons name="information-circle" size={16} color="#3b82f6" />
+  //           <ThemedText
+  //             size="sm"
+  //             weight="semibold"
+  //             className="text-blue-800 ml-2"
+  //           >
+  //             Quick Tips
+  //           </ThemedText>
+  //         </View>
+  //         <View className="space-y-2">
+  //           {[
+  //             "Bluetooth is enabled on your phone",
+  //             "PantrySense Hub is powered on and nearby",
+  //             "Device is in pairing mode (LED blinking)",
+  //           ].map((tip, index) => (
+  //             <View key={index} className="flex-row items-start">
+  //               <Ionicons
+  //                 name="checkmark-circle"
+  //                 size={14}
+  //                 color="#8fb716"
+  //                 className="mr-2 mt-0.5"
+  //               />
+  //               <ThemedText size="sm" variant="secondary" className="flex-1">
+  //                 {tip}
+  //               </ThemedText>
+  //             </View>
+  //           ))}
+  //         </View>
+  //       </View>
 
-//       <ThemedButton
-//         variant="secondary"
-//         size="lg"
-//         onPress={handleRefresh}
-//         className="w-full max-w-xs"
-//       >
-//         <View className="flex-row items-center justify-center">
-//           <Ionicons name="refresh" size={18} color="#0c0b0e" />
-//           <ThemedText
-//             size="base"
-//             weight="semibold"
-//             variant="secondary"
-//             className="ml-2"
-//           >
-//             Scan Again
-//           </ThemedText>
-//         </View>
-//       </ThemedButton>
-//     </View>
-//   );
+  //       <ThemedButton
+  //         variant="secondary"
+  //         size="lg"
+  //         onPress={handleRefresh}
+  //         className="w-full max-w-xs"
+  //       >
+  //         <View className="flex-row items-center justify-center">
+  //           <Ionicons name="refresh" size={18} color="#0c0b0e" />
+  //           <ThemedText
+  //             size="base"
+  //             weight="semibold"
+  //             variant="secondary"
+  //             className="ml-2"
+  //           >
+  //             Scan Again
+  //           </ThemedText>
+  //         </View>
+  //       </ThemedButton>
+  //     </View>
+  //   );
+  const ErrorView = () => {
+    const getStatusMessage = (): {
+      text: string;
+      variant: 'primary' | 'secondary' | 'tertiary' | 'inverse' | 'success' | 'warning' | 'error' | 'muted';
+      size: 'xs' | 'sm' | 'base' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl';
+    } => {
+      if (cooldown > 0 && hasScanned) {
+        return {
+          text: `Next scan available in ${Math.ceil(cooldown / 1000)} seconds`,
+          variant: 'muted',
+          size: 'sm',
+        };
+      }
+      if (isScanning) {
+        return {
+          text: 'Scanning for devices...',
+          variant: 'secondary',
+          size: 'sm',
+        };
+      }
+      return {
+        text: 'Try scanning again to find nearby devices',
+        variant: 'tertiary',
+        size: 'sm',
+      };
+    };
 
-  const ErrorView = () => (
-    <View className="flex-1 justify-center items-center px-6">
-      <View className="w-24 h-24 bg-red-50 rounded-full items-center justify-center mb-6">
-        <Ionicons name="alert-circle-outline" size={32} color="#dc2626" />
+    const statusMessage = getStatusMessage();
+
+    return (
+      <View className="flex-1 justify-center items-center px-6">
+        <View className="w-24 h-24 bg-red-50 rounded-full items-center justify-center mb-6">
+          <Ionicons name="alert-circle-outline" size={32} color="#dc2626" />
+        </View>
+
+        <ThemedText size="xl" weight="bold" className="text-center mb-2">
+          No Devices Found
+        </ThemedText>
+        <ThemedText variant="secondary" className="text-center mb-8 max-w-sm">
+          {scanError ||
+            "We couldn't find any PantrySense Hub devices in your area."}
+        </ThemedText>
+
+        <View className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8 w-full max-w-sm">
+          <View className="flex-row items-center mb-3">
+            <Ionicons name="information-circle" size={16} color="#3b82f6" />
+            <ThemedText
+              size="sm"
+              weight="semibold"
+              className="text-blue-800 ml-2"
+            >
+              Quick Tips
+            </ThemedText>
+          </View>
+          <View className="space-y-2">
+            {[
+              "Bluetooth is enabled on your phone",
+              "PantrySense Hub is powered on and nearby",
+              "Device is in pairing mode (LED blinking)",
+            ].map((tip, index) => (
+              <View key={index} className="flex-row items-start">
+                <Ionicons
+                  name="checkmark-circle"
+                  size={14}
+                  color="#8fb716"
+                  className="mr-2 mt-0.5"
+                />
+                <ThemedText size="sm" variant="secondary" className="flex-1">
+                  {tip}
+                </ThemedText>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <ThemedButton
+          variant="secondary"
+          size="lg"
+          onPress={handleRefresh}
+          className="w-full max-w-xs mb-3"
+          disabled={isScanning || cooldown > 0}
+        >
+          <View className="flex-row items-center justify-center">
+            <Ionicons name="refresh" size={18} color="#0c0b0e" />
+            <ThemedText size="base" weight="semibold" className="ml-2">
+              Scan Again
+            </ThemedText>
+          </View>
+        </ThemedButton>
+
+        <ThemedText
+          variant={statusMessage.variant}
+          size={statusMessage.size}
+          className="text-center"
+        >
+          {statusMessage.text}
+        </ThemedText>
       </View>
-
-      <ThemedText size="xl" weight="bold" className="text-center mb-2">
-        No Devices Found
-      </ThemedText>
-      <ThemedText variant="secondary" className="text-center mb-8 max-w-sm">
-        {scanError ||
-          "We couldn't find any PantrySense Hub devices in your area."}
-      </ThemedText>
-
-      <View className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8 w-full max-w-sm">
-        <View className="flex-row items-center mb-3">
-          <Ionicons name="information-circle" size={16} color="#3b82f6" />
-          <ThemedText
-            size="sm"
-            weight="semibold"
-            className="text-blue-800 ml-2"
-          >
-            Quick Tips
-          </ThemedText>
-        </View>
-        <View className="space-y-2">
-          {[
-            "Bluetooth is enabled on your phone",
-            "PantrySense Hub is powered on and nearby",
-            "Device is in pairing mode (LED blinking)",
-          ].map((tip, index) => (
-            <View key={index} className="flex-row items-start">
-              <Ionicons
-                name="checkmark-circle"
-                size={14}
-                color="#8fb716"
-                className="mr-2 mt-0.5"
-              />
-              <ThemedText size="sm" variant="secondary" className="flex-1">
-                {tip}
-              </ThemedText>
-            </View>
-          ))}
-        </View>
-      </View>
-
-      <ThemedButton
-        variant="secondary"
-        size="lg"
-        onPress={handleRefresh}
-        className="w-full max-w-xs"
-      >
-        <View className="flex-row items-center justify-center">
-          <Ionicons name="refresh" size={18} color="#0c0b0e" />
-          <ThemedText
-            size="base"
-            weight="semibold"
-            variant="secondary"
-            className="ml-2"
-          >
-            Scan Again
-          </ThemedText>
-        </View>
-      </ThemedButton>
-    </View>
-  );
+    );
+  };
 
   const SuccessView = () => (
     <View className="flex-1">
@@ -442,7 +477,8 @@ export default function MotherHubDiscoveryScreen({
 
         {cooldown > 0 && (
           <ThemedText variant="secondary" className="text-center mt-2">
-            Please wait {Math.ceil(cooldown / 1000)} seconds before scanning again.
+            Please wait {Math.ceil(cooldown / 1000)} seconds before scanning
+            again.
           </ThemedText>
         )}
 
@@ -513,6 +549,24 @@ export default function MotherHubDiscoveryScreen({
           </ThemedText>
         </View>
       </ThemedButton>
+      {isScanning ||
+        (cooldown > 0 && (
+          <ThemedText
+            variant={cooldown > 0 && hasScanned ? "secondary" : "tertiary"}
+            size={cooldown > 0 && hasScanned ? "base" : "sm"}
+            className="text-center mt-2"
+          >
+            {(() => {
+              if (cooldown > 0 && hasScanned) {
+                return `Next scan available in ${Math.ceil(cooldown / 1000)} seconds`;
+              }
+              if (isScanning) {
+                return "Scanning in progress...";
+              }
+              return "Running system checks... This usually takes a few moments";
+            })()}
+          </ThemedText>
+        ))}
     </View>
   );
 

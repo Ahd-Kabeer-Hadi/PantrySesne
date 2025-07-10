@@ -31,7 +31,10 @@ function getBLEManager(): BleManager {
   return bleManagerInstance;
 }
 
-const SCAN_COOLDOWN_MS = 60000; // 1 minute cooldown between scans
+// Adaptive cooldown: 3s if no devices found, 15s if devices found
+const SHORT_COOLDOWN_MS = 3000;
+const LONG_COOLDOWN_MS = 15000;
+let lastCooldownMs = SHORT_COOLDOWN_MS;
 
 export function useBLE() {
   const manager = getBLEManager();
@@ -72,7 +75,7 @@ export function useBLE() {
     // MMKV: Debounce scan if recently scanned
     const lastScan = getLastScanTime();
     const now = Date.now();
-    if (lastScan && now - lastScan < SCAN_COOLDOWN_MS) {
+    if (lastScan && now - lastScan < lastCooldownMs) {
       console.log('⏳ Scan skipped: cooldown active');
       return;
     }
@@ -116,6 +119,13 @@ export function useBLE() {
       console.log('⏱️ Scan timeout');
       stopScan();
       setIsScanning(false);
+      // Adaptive cooldown: 3s if no devices found, 15s if devices found
+      const currentDevices = useBLEStore.getState().devices;
+      if (currentDevices.length === 0) {
+        lastCooldownMs = SHORT_COOLDOWN_MS;
+      } else {
+        lastCooldownMs = LONG_COOLDOWN_MS;
+      }
       setLastScanTime(Date.now()); // MMKV: Record scan time after scan completes
     }, 8000) as unknown as NodeJS.Timeout;
   };
@@ -127,22 +137,52 @@ export function useBLE() {
     scanTimer.current = null;
   };
 
-  const connectToDevice = async (deviceId: string): Promise<Device | null> => {
+  /**
+   * Attempts to connect to a BLE device with polling/throttle and timeout.
+   * @param deviceId The BLE device ID
+   * @param timeoutMs Max time to keep retrying (default 30s)
+   * @param intervalMs Time between attempts (default 2500ms)
+   * @returns Device if connected, or null
+   */
+  const connectToDevice = async (
+    deviceId: string,
+    timeoutMs = 30000,
+    intervalMs = 2500
+  ): Promise<Device | null> => {
     if (!deviceId) return null;
-
-    try {
-      stopScan();
-      // Add a short delay to let BLE stack settle
-      await new Promise(res => setTimeout(res, 300));
-      console.log(`🔗 Connecting to device ${deviceId}...`);
-      const device = await manager.connectToDevice(deviceId, { timeout: 8000 });
-      await device.discoverAllServicesAndCharacteristics();
-      setSelectedDevice(device);
-      return device;
-    } catch (error) {
-      console.error('❌ Connection error:', error);
-      return null;
+    const start = Date.now();
+    let lastError = null;
+    let attempt = 1;
+    while (Date.now() - start < timeoutMs) {
+      try {
+        stopScan();
+        // Let BLE stack settle
+        await new Promise(res => setTimeout(res, 300));
+        console.log(`🔗 [Attempt ${attempt}] Connecting to device ${deviceId}...`);
+        const device = await manager.connectToDevice(deviceId, { timeout: 8000 });
+        await device.discoverAllServicesAndCharacteristics();
+        setSelectedDevice(device);
+        console.log(`✅ [Attempt ${attempt}] Connected to device ${deviceId}`);
+        return device;
+      } catch (error) {
+        lastError = error;
+        const errorMsg = error?.message || error?.toString();
+        console.log(`❌ [Attempt ${attempt}] Connection error:`, errorMsg, error);
+        // Only retry if the error is a disconnection error
+        if (errorMsg && errorMsg.includes('was disconnected')) {
+          if (Date.now() - start + intervalMs > timeoutMs) break; // Don't overshoot timeout
+          console.log(`🔁 Retrying connection to device ${deviceId} after ${intervalMs}ms...`);
+          await new Promise(res => setTimeout(res, intervalMs));
+          attempt++;
+          continue;
+        } else {
+          // For other errors, do not retry
+          break;
+        }
+      }
     }
+    console.error(`❌ All connection attempts failed for device ${deviceId}`, lastError);
+    return null;
   };
 
   const disconnectDevice = async (deviceId?: string): Promise<void> => {

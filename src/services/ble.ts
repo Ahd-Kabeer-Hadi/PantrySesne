@@ -1,5 +1,6 @@
 // lib/ble.ts
 import type { Device } from "react-native-ble-plx";
+import { Buffer } from "buffer";
 
 // BLE Service UUIDs (match firmware)
 export const PROVISIONING_SERVICE_UUID = "12340000-1234-1234-1234-123456789abc";
