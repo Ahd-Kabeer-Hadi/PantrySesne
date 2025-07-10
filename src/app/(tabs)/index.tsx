@@ -164,7 +164,7 @@ export default function DashboardScreen() {
                   {mockDevices.length} containers monitored
                 </ThemedText>
               </View>
-              <TouchableOpacity className="w-14 h-14 bg-primary rounded-2xl items-center justify-center shadow-lg">
+              <TouchableOpacity className="w-14 h-14 bg-primary rounded-2xl items-center justify-center">
                 <Ionicons name="add" size={28} color="#FFFFFF" />
               </TouchableOpacity>
             </View>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity, Modal, Animated, Dimensions, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedContainer, ThemedText, ThemedButton } from './ThemedComponents';
 import { AppError, getErrorIcon, getErrorColor } from '../utils/errorHandler';
@@ -147,4 +147,169 @@ export function ErrorBanner({ error, onDismiss }: { error: AppError; onDismiss?:
       </ThemedText>
     </View>
   );
-} 
+}
+
+// Drawer Modal for Error Management
+export function ErrorDrawerModal({
+  visible,
+  error,
+  onRetry,
+  onDismiss,
+  showSolution = true,
+}: {
+  visible: boolean;
+  error: AppError | null;
+  onRetry?: () => void;
+  onDismiss?: () => void;
+  showSolution?: boolean;
+}) {
+  const slideAnim = React.useRef(new Animated.Value(0)).current;
+  const screenHeight = Dimensions.get('window').height;
+
+  React.useEffect(() => {
+    if (visible) {
+      Animated.timing(slideAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible]);
+
+  if (!error) return null;
+
+  const translateY = slideAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [screenHeight, 0],
+  });
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="none"
+      transparent
+      onRequestClose={onDismiss}
+      statusBarTranslucent
+    >
+      <Animated.View className="absolute inset-0 bg-black/30 z-10" style={{ opacity: slideAnim }} />
+      <Animated.View
+        className="absolute left-0 right-0 bottom-0 bg-white rounded-t-3xl px-6 pt-3 pb-8 z-20"
+        style={{
+          transform: [{ translateY }],
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.15,
+          shadowRadius: 12,
+          elevation: 12,
+        }}
+      >
+        <View className="w-12 h-1.5 rounded bg-gray-200 self-center mb-4" />
+        <View className="items-center mb-4">
+          <Ionicons
+            name={getErrorIcon(error.category) as any}
+            size={36}
+            color={getErrorColor(error.severity) === 'error' ? '#dc2626' : '#e4fa5b'}
+            style={{ marginBottom: 8 }}
+          />
+          <ThemedText size="xl" weight="bold" variant="error" className="text-center mb-2">
+            {error.title}
+          </ThemedText>
+          <ThemedText size="md" variant="secondary" className="text-center mb-4">
+            {error.userMessage}
+          </ThemedText>
+        </View>
+        {showSolution && (
+          <View className="bg-success/10 rounded-xl p-3 mb-2 flex-row items-start">
+            <Ionicons name="bulb-outline" size={20} color="#8fb716" className="mr-2 mt-0.5" />
+            <View className="flex-1">
+              <ThemedText size="sm" weight="semibold" className="mb-1">
+                How to fix this:
+              </ThemedText>
+              <ThemedText size="sm" variant="secondary">
+                {error.solution}
+              </ThemedText>
+            </View>
+          </View>
+        )}
+        {/* Improved Action Buttons */}
+        <View className="flex flex-col items-stretch mt-6">
+          {onRetry && (
+            <ThemedButton
+              variant="primary"
+              onPress={onRetry}
+              size="lg"
+              className="mb-3 flex-row items-center justify-center"
+            >
+              <Ionicons name="refresh" size={18} color="#fff" className="mr-2" />
+              <ThemedText variant="inverse" weight="semibold" size="lg">Try Again</ThemedText>
+            </ThemedButton>
+          )}
+          {onRetry && onDismiss && <View className="h-2" />}
+          <ThemedButton
+            variant="ghost"
+            onPress={onDismiss}
+            size="lg"
+            className="flex-row items-center justify-center"
+          >
+            <Ionicons name="close" size={18} color="#8fb716" className="mr-2" />
+            <ThemedText variant="primary" weight="semibold" size="lg">Dismiss</ThemedText>
+          </ThemedButton>
+        </View>
+      </Animated.View>
+    </Modal>
+  );
+}
+
+const styles = StyleSheet.create({
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    zIndex: 1,
+  },
+  drawer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: Platform.OS === 'ios' ? 36 : 24,
+    zIndex: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 12,
+  },
+  handle: {
+    width: 48,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: '#e5e5e5',
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  solutionBox: {
+    backgroundColor: '#f7fdf0',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+  },
+  buttonGroup: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    marginTop: 24,
+    gap: 0,
+  },
+  buttonDivider: {
+    height: 8,
+  },
+}); 

@@ -21,7 +21,7 @@ export default function WelcomeScreen({ onNext }: WelcomeScreenProps) {
             {/* Logo Container */}
             <View className="items-center mb-8">
               {/* Icon Container with proper contrast */}
-              <View className="w-24 h-24 bg-primary rounded-2xl mb-6 items-center justify-center shadow-lg">
+              <View className="w-24 h-24 bg-primary rounded-2xl mb-6 items-center justify-center">
                 <Ionicons name="leaf" size={40} color="#FFFFFF" />
               </View>
               
@@ -74,7 +74,7 @@ export default function WelcomeScreen({ onNext }: WelcomeScreenProps) {
               variant="primary"
               size="lg"
               onPress={onNext}
-              className="shadow-lg"
+              className=""
             >
               <View className="flex-row items-center justify-center">
                 <ThemedText size="lg" weight="semibold" variant="inverse" className="mr-2">

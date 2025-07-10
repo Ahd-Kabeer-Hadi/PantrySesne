@@ -1,18 +1,20 @@
+// stores/bleStore.ts
 import { create } from "zustand";
 import { MMKV } from "react-native-mmkv";
-import { Device } from "react-native-ble-plx";
+import type { Device } from "react-native-ble-plx";
 
+// MMKV instance
 const storage = new MMKV();
+const ONBOARDED_KEY = "onboarded";
 
-const ONBOARDED_KEY = 'onboarded';
-
-interface ProvisioningDevice {
+// Types
+export interface ProvisioningDevice {
   id: string;
   name: string;
   device: Device;
 }
 
-interface SmartPot {
+export interface SmartPot {
   id: string;
   name: string;
   weight: string;
@@ -20,36 +22,56 @@ interface SmartPot {
   lastSeen: number;
 }
 
+export interface BLEDevice {
+  id: string;
+  name: string;
+  rssi: number;
+  isConnectable: boolean;
+  raw: Device;
+}
+
+type ProvisioningStatus = "idle" | "pending" | "success" | "error";
+
 interface BLEState {
-  // Provisioning devices (SmartPotMaster for WiFi setup)
+  // BLE device state
+  isScanning: boolean;
+  devices: BLEDevice[];
+  selectedDevice: Device | null;
+
+  // Provisioning screen BLE devices (for setup)
   provisioningDevices: ProvisioningDevice[];
   connectedProvisioningDevice: Device | null;
-  
-  // Smart Pots (SmartPot_01, SmartPot_02, etc.)
+
+  // SmartPot-specific devices
   smartPots: SmartPot[];
   connectedSmartPot: Device | null;
-  
-  // WiFi provisioning state
-  provisioning: 'idle' | 'pending' | 'success' | 'error';
-  
-  // General state
+
+  // Provisioning and onboarding state
+  provisioning: ProvisioningStatus;
   error: string | null;
   isOnboarded: boolean;
-  
-  // Actions
+
+  // BLE state actions
+  setIsScanning: (isScanning: boolean) => void;
+  setDevices: (devices: BLEDevice[] | ((prev: BLEDevice[]) => BLEDevice[])) => void;
+  setSelectedDevice: (device: Device | null) => void;
+
+  // Provisioning actions
   setProvisioningDevices: (devices: ProvisioningDevice[]) => void;
   addProvisioningDevice: (device: ProvisioningDevice) => void;
   setConnectedProvisioningDevice: (device: Device | null) => void;
-  
+
+  // SmartPot actions
   setSmartPots: (pots: SmartPot[]) => void;
   addSmartPot: (pot: SmartPot) => void;
   updateSmartPotWeight: (id: string, weight: string) => void;
   setConnectedSmartPot: (device: Device | null) => void;
-  
-  setProvisioning: (status: 'idle' | 'pending' | 'success' | 'error') => void;
+
+  // Provisioning and error
+  setProvisioning: (status: ProvisioningStatus) => void;
   setError: (err: string | null) => void;
-  
-  // Persistence
+
+  // Persistence methods
   persistProvisionedDevice: (device: { id: string; name: string }) => void;
   getPersistedDevices: () => { id: string; name: string }[];
   persistLastSSID: (ssid: string) => void;
@@ -58,68 +80,92 @@ interface BLEState {
   persistOnboardingComplete: () => void;
 }
 
-// Helper functions for persistence
+// MMKV helpers
 const getProvisionedDevices = (): { id: string; name: string }[] => {
-  const devices = storage.getString('provisionedDevices');
-  return devices ? JSON.parse(devices) : [];
+  try {
+    const devices = storage.getString("provisionedDevices");
+    return devices ? JSON.parse(devices) : [];
+  } catch {
+    return [];
+  }
 };
 
 const saveProvisionedDevice = (device: { id: string; name: string }) => {
-  const devices = getProvisionedDevices();
-  const exists = devices.find(d => d.id === device.id);
-  if (!exists) {
-    devices.push(device);
-    storage.set('provisionedDevices', JSON.stringify(devices));
+  const existing = getProvisionedDevices();
+  if (!existing.some((d) => d.id === device.id)) {
+    const updated = [...existing, device];
+    storage.set("provisionedDevices", JSON.stringify(updated));
   }
 };
 
 const getLastSSID = (): string => {
-  return storage.getString('lastSSID') || '';
+  return storage.getString("lastSSID") || "";
 };
 
 const saveLastSSID = (ssid: string) => {
-  storage.set('lastSSID', ssid);
+  storage.set("lastSSID", ssid);
 };
 
+// Zustand Store
 export const useBLEStore = create<BLEState>((set, get) => ({
-  // Provisioning devices
+  // BLE lifecycle
+  isScanning: false,
+  devices: [],
+  selectedDevice: null,
+
+  // BLE provisioning
   provisioningDevices: [],
   connectedProvisioningDevice: null,
-  
-  // Smart Pots
+
+  // SmartPot
   smartPots: [],
   connectedSmartPot: null,
-  
-  // WiFi provisioning
-  provisioning: 'idle',
+
+  // Status and error
+  provisioning: "idle",
   error: null,
-  
-  // Check if user has completed onboarding by looking at persisted devices
   isOnboarded: getProvisionedDevices().length > 0,
-  
-  // Provisioning device actions
+
+  // BLE actions
+  setIsScanning: (value) => set({ isScanning: value }),
+  setDevices: (devicesOrUpdater) =>
+    set((state) => ({
+      devices:
+        typeof devicesOrUpdater === 'function'
+          ? devicesOrUpdater(state.devices)
+          : devicesOrUpdater,
+    })),
+  setSelectedDevice: (device) => set({ selectedDevice: device }),
+
+  // Provisioning actions
   setProvisioningDevices: (devices) => set({ provisioningDevices: devices }),
-  addProvisioningDevice: (device) => set((state) => ({ 
-    provisioningDevices: [...state.provisioningDevices, device] 
-  })),
-  setConnectedProvisioningDevice: (device) => set({ connectedProvisioningDevice: device }),
-  
-  // Smart Pot actions
+  addProvisioningDevice: (device) =>
+    set((state) => ({
+      provisioningDevices: [...state.provisioningDevices, device],
+    })),
+  setConnectedProvisioningDevice: (device) =>
+    set({ connectedProvisioningDevice: device }),
+
+  // SmartPot actions
   setSmartPots: (pots) => set({ smartPots: pots }),
-  addSmartPot: (pot) => set((state) => ({ 
-    smartPots: [...state.smartPots, pot] 
-  })),
-  updateSmartPotWeight: (id, weight) => set((state) => ({
-    smartPots: state.smartPots.map(pot => 
-      pot.id === id ? { ...pot, weight, lastSeen: Date.now() } : pot
-    )
-  })),
+  addSmartPot: (pot) =>
+    set((state) => ({
+      smartPots: [...state.smartPots, pot],
+    })),
+  updateSmartPotWeight: (id, weight) =>
+    set((state) => ({
+      smartPots: state.smartPots.map((pot) =>
+        pot.id === id
+          ? { ...pot, weight, lastSeen: Date.now() }
+          : pot
+      ),
+    })),
   setConnectedSmartPot: (device) => set({ connectedSmartPot: device }),
-  
-  // General actions
+
+  // General status
   setProvisioning: (status) => set({ provisioning: status }),
   setError: (err) => set({ error: err }),
-  
+
   // Persistence
   persistProvisionedDevice: (device) => saveProvisionedDevice(device),
   getPersistedDevices: () => getProvisionedDevices(),
@@ -127,10 +173,10 @@ export const useBLEStore = create<BLEState>((set, get) => ({
   getPersistedSSID: () => getLastSSID(),
   setOnboarded: (value) => {
     set({ isOnboarded: value });
-    storage.set(ONBOARDED_KEY, value ? 1 : 0);
+    storage.set(ONBOARDED_KEY, value ? "1" : "0");
   },
   persistOnboardingComplete: () => {
     set({ isOnboarded: true });
-    storage.set(ONBOARDED_KEY, 1);
+    storage.set(ONBOARDED_KEY, "1");
   },
-})); 
+}));

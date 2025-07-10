@@ -98,7 +98,7 @@ export default function SettingsScreen() {
                   Customize your experience
                 </ThemedText>
               </View>
-              <View className="w-12 h-12 bg-primary rounded-2xl items-center justify-center shadow-md">
+              <View className="w-12 h-12 bg-primary rounded-2xl items-center justify-center">
                 <Ionicons name="settings" size={24} color="#FFFFFF" />
               </View>
             </View>

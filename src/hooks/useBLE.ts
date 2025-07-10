@@ -1,300 +1,212 @@
-import { useState, useEffect, useCallback } from "react";
-import { BleManager, Device, State } from "react-native-ble-plx";
-import * as bleService from '../services/ble';
-import { useBLEStore } from '../stores/bleStore';
-import { parseError, AppError } from '../utils/errorHandler';
-import { useBLEPermissions } from './useBLEPermissions';
+// hooks/useBLE.ts
+import { useEffect, useRef, useState } from 'react';
+import { BleManager, Device, State, Subscription } from 'react-native-ble-plx';
+import { Platform } from 'react-native';
+import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import { useBLEStore } from '../stores/bleStore'; // Optional global state (Zustand)
+import { getLastScanTime, setLastScanTime } from '../lib/mmkvUtils';
 
-// BLE Service and Characteristic UUIDs for SmartPot Master
-const SMART_POT_MASTER_SERVICE = "12345678-1234-1234-1234-123456789abc";
-const WIFI_SSID_CHARACTERISTIC = "87654321-4321-4321-4321-cba987654321";
-const WIFI_PASSWORD_CHARACTERISTIC = "11111111-2222-3333-4444-555555555555";
-const WIFI_STATUS_CHARACTERISTIC = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
+export interface BLEDevice {
+  id: string;
+  name: string;
+  rssi: number;
+  isConnectable: boolean;
+  raw: Device;
+}
 
-// BLE Service and Characteristic UUIDs for Smart Pots
-const SMART_POT_SERVICE = "22222222-3333-4444-5555-666666666666";
-const WEIGHT_CHARACTERISTIC = "33333333-4444-5555-6666-777777777777";
-const BATTERY_CHARACTERISTIC = "44444444-5555-6666-7777-888888888888";
+const TARGET_NAMES = ['SmartPot', 'SmartPot Master', 'PantrySense'];
 
-// This hook connects UI to BLE service and global state (Zustand)
+function isTargetDevice(name: string | null | undefined): boolean {
+  if (!name) return false;
+  return TARGET_NAMES.some((tag) => name.includes(tag));
+}
+
+// Singleton BLEManager
+let bleManagerInstance: BleManager | null = null;
+
+function getBLEManager(): BleManager {
+  if (!bleManagerInstance) {
+    bleManagerInstance = new BleManager();
+  }
+  return bleManagerInstance;
+}
+
+// Adaptive cooldown: 3s if no devices found, 15s if devices found
+export const SHORT_COOLDOWN_MS = 3000;
+export const LONG_COOLDOWN_MS = 15000;
+let lastCooldownMs = SHORT_COOLDOWN_MS;
+
+
 export function useBLE() {
-  const {
-    // Provisioning devices
-    provisioningDevices,
-    setProvisioningDevices,
-    addProvisioningDevice,
-    connectedProvisioningDevice,
-    setConnectedProvisioningDevice,
-    
-    // Smart Pots
-    smartPots,
-    setSmartPots,
-    addSmartPot,
-    updateSmartPotWeight,
-    connectedSmartPot,
-    setConnectedSmartPot,
-    
-    // WiFi provisioning
-    provisioning,
-    setProvisioning,
-    
-    error,
-    setError,
-    persistProvisionedDevice,
-    persistLastSSID,
-    getPersistedSSID,
-  } = useBLEStore();
+  const manager = getBLEManager();
+  const [isReady, setIsReady] = useState(false);
+  const bleStateSub = useRef<Subscription | null>(null);
+  const scanTimer = useRef<NodeJS.Timeout | null>(null);
+  const knownIds = useRef<Set<string>>(new Set());
 
-  const [manager] = useState(() => new BleManager());
-  const [state, setState] = useState<State>(State.Unknown);
-  const [scanning, setScanning] = useState(false);
-  
+  // 🧠 Global Zustand Store
   const {
-    isReady,
-    requestPermissions,
-    error: permissionError,
-  } = useBLEPermissions();
+    devices,
+    setDevices,
+    isScanning,
+    setIsScanning,
+    selectedDevice,
+    setSelectedDevice,
+  } = useBLEStore(); // acts as single source of truth
 
-  // ===== PROVISIONING DEVICES (SmartPotMaster) =====
-  
-  // Scan for WiFi provisioning devices
-  const scanForProvisioningDevices = async () => {
-    console.log('🔍 BLE: Starting provisioning device scan, checking permissions...');
-    console.log('🔍 BLE: isReady:', isReady);
-    
-    // Check permissions first
-    if (!isReady) {
-      console.log('🔍 BLE: Permissions not ready, requesting...');
-      const permissionsGranted = await requestPermissions();
-      console.log('🔍 BLE: Permissions granted:', permissionsGranted);
-      
-      if (!permissionsGranted) {
-        console.log('🔍 BLE: Permissions denied, stopping scan');
-        const appError = parseError('Permissions not granted');
-        setError(appError.userMessage);
+  // 📱 Platform permission
+  // Remove requestPermissions function
+
+  // 🔄 BLE lifecycle monitor
+  useEffect(() => {
+    bleStateSub.current = manager.onStateChange((newState: State) => {
+      console.log('🧠 BLE State:', newState);
+      setIsReady(newState === 'PoweredOn');
+    }, true);
+
+    return () => {
+      bleStateSub.current?.remove();
+      scanTimer.current && clearTimeout(scanTimer.current);
+    };
+  }, []);
+
+  const startScan = async (): Promise<void> => {
+    if (isScanning || !isReady) return;
+
+    // MMKV: Debounce scan if recently scanned
+    const lastScan = getLastScanTime();
+    const now = Date.now();
+    if (lastScan && now - lastScan < lastCooldownMs) {
+      console.log('⏳ Scan skipped: cooldown active');
+      return;
+    }
+
+    console.log('🔍 Starting BLE Scan...');
+    knownIds.current.clear();
+    setDevices([]);
+    setIsScanning(true);
+
+    manager.startDeviceScan(null, { allowDuplicates: false }, (error, scannedDevice) => {
+      if (error) {
+        console.error('❌ BLE Scan Error:', error);
+        stopScan();
         return;
       }
-    }
 
-    console.log('🔍 BLE: Permissions OK, starting provisioning device scan...');
-    setProvisioningDevices([]);
-    setError(null);
-    
-    bleService.scanForProvisioningDevices(
-      (device: Device) => {
-        console.log('🔍 BLE: Found provisioning device:', device.name || device.id);
-        setProvisioningDevices(prevDevices => [...prevDevices, { 
-          id: device.id, 
-          name: device.name || device.localName || device.id, 
-          device 
-        }]);
-      },
-      (err: string) => {
-        console.log('🔍 BLE: Provisioning scan error:', err);
-        const appError = parseError(err);
-        setError(appError.userMessage);
-      },
-      () => {
-        console.log('🔍 BLE: Provisioning scan completed');
+      if (
+        scannedDevice &&
+        scannedDevice.name &&
+        isTargetDevice(scannedDevice.name) &&
+        !knownIds.current.has(scannedDevice.id)
+      ) {
+        knownIds.current.add(scannedDevice.id);
+        setDevices((prev: BLEDevice[]) => {
+          if (prev.some((d) => d.id === scannedDevice.id)) return prev;
+          return [
+            ...prev,
+            {
+              id: scannedDevice.id,
+              name: scannedDevice.name,
+              rssi: scannedDevice.rssi ?? -100,
+              isConnectable: scannedDevice.isConnectable ?? true,
+              raw: scannedDevice,
+            },
+          ];
+        });
       }
-    );
-  };
-
-  // Connect to provisioning device
-  const connectToProvisioningDevice = async (id: string) => {
-    console.log('🔗 BLE: Connecting to provisioning device:', id);
-    try {
-      const device = await bleService.connectToDevice(id);
-      console.log('🔗 BLE: Connected to provisioning device successfully');
-      setProvisioning(true);
-      return device;
-    } catch (e: any) {
-      console.log('🔗 BLE: Provisioning device connection failed:', e.message);
-      const appError = parseError(e.message);
-      setError(appError.userMessage);
-      setProvisioning(false);
-      return null;
-    }
-  };
-
-  // Provision WiFi to device
-  const provisionWiFi = async (ssid: string, password: string) => {
-    console.log('📡 BLE: Provisioning WiFi to device - SSID:', ssid);
-    if (provisioningDevices.length === 0) {
-      console.log('📡 BLE: No provisioning device connected');
-      const appError = parseError('No device connected');
-      setError(appError.userMessage);
-      setProvisioning(false);
-      return false;
-    }
-    setProvisioning(true);
-    setError(null);
-    try {
-      await bleService.provisionWiFi(provisioningDevices[0].device, ssid, password);
-      console.log('📡 BLE: WiFi provisioning successful');
-      setProvisioning(false);
-      addSmartPot({ 
-        id: provisioningDevices[0].device.id, 
-        name: provisioningDevices[0].device.name || provisioningDevices[0].device.id 
-      });
-      return true;
-    } catch (e: any) {
-      console.log('📡 BLE: WiFi provisioning failed:', e.message);
-      const appError = parseError(e.message);
-      setError(appError.userMessage);
-      setProvisioning(false);
-      return false;
-    }
-  };
-
-  // ===== SMART POTS (SmartPot_01, SmartPot_02, etc.) =====
-  
-  // Scan for Smart Pots
-  const scanForSmartPots = async () => {
-    console.log('🔍 BLE: Starting Smart Pot scan, checking permissions...');
-    
-    // Check permissions first
-    if (!isReady) {
-      console.log('🔍 BLE: Permissions not ready, requesting...');
-      const permissionsGranted = await requestPermissions();
-      console.log('🔍 BLE: Permissions granted:', permissionsGranted);
-      
-      if (!permissionsGranted) {
-        console.log('🔍 BLE: Permissions denied, stopping scan');
-        const appError = parseError('Permissions not granted');
-        setError(appError.userMessage);
-        return;
+    });
+    // Timeout scan after 8 seconds
+    scanTimer.current = setTimeout(() => {
+      console.log('⏱️ Scan timeout');
+      stopScan();
+      setIsScanning(false);
+      // Adaptive cooldown: 3s if no devices found, 15s if devices found
+      const currentDevices = useBLEStore.getState().devices;
+      if (currentDevices.length === 0) {
+        lastCooldownMs = SHORT_COOLDOWN_MS;
+      } else {
+        lastCooldownMs = LONG_COOLDOWN_MS;
       }
-    }
-
-    console.log('🔍 BLE: Permissions OK, starting Smart Pot scan...');
-    setSmartPots([]);
-    setError(null);
-    
-    bleService.scanForSmartPots(
-      (device: Device) => {
-        console.log('🔍 BLE: Found Smart Pot:', device.name || device.id);
-        setSmartPots(prevDevices => [...prevDevices, { 
-          id: device.id, 
-          name: device.name || device.localName || device.id,
-          weight: '0g', // Default weight
-          device,
-          lastSeen: Date.now()
-        }]);
-      },
-      (err: string) => {
-        console.log('🔍 BLE: Smart Pot scan error:', err);
-        const appError = parseError(err);
-        setError(appError.userMessage);
-      },
-      () => {
-        console.log('🔍 BLE: Smart Pot scan completed');
-      }
-    );
+      setLastScanTime(Date.now()); // MMKV: Record scan time after scan completes
+    }, 8000) as unknown as NodeJS.Timeout;
   };
 
-  // Connect to Smart Pot
-  const connectToSmartPot = async (id: string) => {
-    console.log('🔗 BLE: Connecting to Smart Pot:', id);
-    try {
-      const device = await bleService.connectToDevice(id);
-      console.log('🔗 BLE: Connected to Smart Pot successfully');
-      setConnectedSmartPot(true);
-      return device;
-    } catch (e: any) {
-      console.log('🔗 BLE: Smart Pot connection failed:', e.message);
-      const appError = parseError(e.message);
-      setError(appError.userMessage);
-      setConnectedSmartPot(false);
-      return null;
-    }
+  const stopScan = (): void => {
+    manager.stopDeviceScan();
+    if (isScanning) setIsScanning(false);
+    scanTimer.current && clearTimeout(scanTimer.current);
+    scanTimer.current = null;
   };
 
-  // Read weight from Smart Pot
-  const readWeightFromSmartPot = async () => {
-    console.log('📊 BLE: Reading weight from Smart Pot');
-    if (smartPots.length === 0) {
-      console.log('📊 BLE: No Smart Pot connected');
-      const appError = parseError('No Smart Pot connected');
-      setError(appError.userMessage);
-      return null;
-    }
-    try {
-      const weight = await bleService.readWeightData(smartPots[0].device);
-      console.log('📊 BLE: Weight read successfully:', weight);
-      if (weight) {
-        setSmartPots(prevDevices => prevDevices.map(device =>
-          device.id === smartPots[0].id ? { ...device, weight: weight } : device
-        ));
-      }
-      return weight;
-    } catch (e: any) {
-      console.log('📊 BLE: Weight reading failed:', e.message);
-      const appError = parseError(e.message);
-      setError(appError.userMessage);
-      return null;
-    }
-  };
-
-  // ===== GENERAL FUNCTIONS =====
-  
-  // Disconnect
-  const disconnect = async () => {
-    if (provisioningDevices.length > 0) {
-      console.log('🔌 BLE: Disconnecting provisioning device');
+  /**
+   * Attempts to connect to a BLE device with polling/throttle and timeout.
+   * @param deviceId The BLE device ID
+   * @param timeoutMs Max time to keep retrying (default 30s)
+   * @param intervalMs Time between attempts (default 2500ms)
+   * @returns Device if connected, or null
+   */
+  const connectToDevice = async (
+    deviceId: string,
+    timeoutMs = 30000,
+    intervalMs = 2500
+  ): Promise<Device | null> => {
+    if (!deviceId) return null;
+    const start = Date.now();
+    let lastError = null;
+    let attempt = 1;
+    while (Date.now() - start < timeoutMs) {
       try {
-        await bleService.disconnectDevice(provisioningDevices[0].device);
-        console.log('🔌 BLE: Provisioning device disconnected successfully');
-      } catch (e: any) {
-        console.log('🔌 BLE: Provisioning device disconnect error (non-critical):', e.message);
-      } finally {
-        setProvisioningDevices([]);
+        stopScan();
+        // Let BLE stack settle
+        await new Promise(res => setTimeout(res, 300));
+        console.log(`🔗 [Attempt ${attempt}] Connecting to device ${deviceId}...`);
+        const device = await manager.connectToDevice(deviceId, { timeout: 8000 });
+        await device.discoverAllServicesAndCharacteristics();
+        setSelectedDevice(device);
+        console.log(`✅ [Attempt ${attempt}] Connected to device ${deviceId}`);
+        return device;
+      } catch (error) {
+        lastError = error;
+        const errorMsg = error?.message || error?.toString();
+        console.log(`❌ [Attempt ${attempt}] Connection error:`, errorMsg, error);
+        // Only retry if the error is a disconnection error
+        if (errorMsg && errorMsg.includes('was disconnected')) {
+          if (Date.now() - start + intervalMs > timeoutMs) break; // Don't overshoot timeout
+          console.log(`🔁 Retrying connection to device ${deviceId} after ${intervalMs}ms...`);
+          await new Promise(res => setTimeout(res, intervalMs));
+          attempt++;
+          continue;
+        } else {
+          // For other errors, do not retry
+          break;
+        }
       }
     }
-    
-    if (smartPots.length > 0) {
-      console.log('🔌 BLE: Disconnecting Smart Pot');
-      try {
-        await bleService.disconnectDevice(smartPots[0].device);
-        console.log('🔌 BLE: Smart Pot disconnected successfully');
-      } catch (e: any) {
-        console.log('🔌 BLE: Smart Pot disconnect error (non-critical):', e.message);
-      } finally {
-        setSmartPots([]);
-      }
-    }
+    console.error(`❌ All connection attempts failed for device ${deviceId}`, lastError);
+    return null;
   };
 
-  // Get parsed error for UI display
-  const getParsedError = (): AppError | null => {
-    if (!error) return null;
-    return parseError(error);
+  const disconnectDevice = async (deviceId?: string): Promise<void> => {
+    try {
+      if (!deviceId && selectedDevice) {
+        await manager.cancelDeviceConnection(selectedDevice.id);
+      } else if (deviceId) {
+        await manager.cancelDeviceConnection(deviceId);
+      }
+      setSelectedDevice(null);
+    } catch (err) {
+      console.warn('⚠️ Disconnect error:', err);
+    }
   };
 
   return {
-    // Provisioning devices
-    provisioningDevices,
-    scanForProvisioningDevices,
-    connectToProvisioningDevice,
-    connectedProvisioningDevice,
-    provisionWiFi,
-    
-    // Smart Pots
-    smartPots,
-    scanForSmartPots,
-    connectToSmartPot,
-    connectedSmartPot,
-    readWeightFromSmartPot,
-    
-    // WiFi provisioning
-    provisioning,
-    
-    // General
-    disconnect,
-    error,
-    setError,
-    getParsedError,
     isReady,
-    requestPermissions,
+    isScanning,
+    devices,
+    selectedDevice,
+    startScan,
+    stopScan,
+    connectToDevice,
+    disconnectDevice,
   };
-} 
+}
