@@ -76,7 +76,6 @@ export default function MotherHubDiscoveryScreen({
   const handleRefresh = async (): Promise<void> => {
     if (isScanning) return;
     setScanError(null);
-    setHasScanned(true);
     console.log("🔍 ScanMotherScreen: Starting scan...");
     try {
       const granted = await requestPermissions();
@@ -94,6 +93,14 @@ export default function MotherHubDiscoveryScreen({
       );
     }
   };
+
+  const prevIsScanningRef = React.useRef(isScanning);
+  useEffect(() => {
+    if (prevIsScanningRef.current && !isScanning) {
+      setHasScanned(true);
+    }
+    prevIsScanningRef.current = isScanning;
+  }, [isScanning]);
 
   const getCurrentViewState = (): ViewState => {
     if (isScanning) return "scanning";
@@ -309,7 +316,7 @@ export default function MotherHubDiscoveryScreen({
       </ThemedText>
       <ThemedText variant="secondary" className="text-center mb-8 max-w-sm">
         {scanError ||
-          "We couldn&apos;t find any PantrySense Hub devices in your area."}
+          "We couldn't find any PantrySense Hub devices in your area."}
       </ThemedText>
 
       <View className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8 w-full max-w-sm">
