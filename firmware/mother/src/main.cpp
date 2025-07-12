@@ -95,12 +95,12 @@ void setupWiFiProvisioning() {
   
   ssidChar = service->createCharacteristic(
     SSID_CHAR_UUID, 
-    BLECharacteristic::PROPERTY_WRITE
+    BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR
   );
   
   passChar = service->createCharacteristic(
     PASS_CHAR_UUID, 
-    BLECharacteristic::PROPERTY_WRITE
+    BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR
   );
   
   ssidChar->setCallbacks(new WiFiProvisioningCallbacks());

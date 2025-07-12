@@ -145,23 +145,78 @@ export default function OnboardingFlow() {
             setShowError(false);
             setError(null);
           }}
+          onRetry={async () => {
+            setShowError(false);
+            setError(null);
+            // Retry provisioning logic could be added here
+          }}
         />
         <MotherHubWifiSetupScreen
           loading={wifiLoading || provisioning === "pending"}
           onSubmit={async (ssid, password) => {
             setWifiLoading(true);
             setProvisionStatus("connecting");
-            try {
-              if (!storeSelectedDevice) throw new Error("No device selected");
-              const ok = await provisionWiFiService(storeSelectedDevice, ssid, password);
-              setStep("provisioning");
-              setProvisionStatus(ok ? "success" : "error");
-            } catch (e) {
-              setProvisionStatus("error");
-              handleError("WiFi Provisioning Failed");
-            } finally {
-              setWifiLoading(false);
+            
+            // Retry logic for provisioning
+            let retryCount = 0;
+            const maxRetries = 2;
+            
+            while (retryCount <= maxRetries) {
+              try {
+                if (!storeSelectedDevice) throw new Error("No device selected");
+                
+                console.log(`🔄 Starting WiFi provisioning (attempt ${retryCount + 1}/${maxRetries + 1})...`);
+                const ok = await provisionWiFiService(storeSelectedDevice, ssid, password);
+                
+                if (ok) {
+                  console.log("✅ Provisioning completed successfully");
+                  setStep("provisioning");
+                  setProvisionStatus("success");
+                  break; // Success, exit retry loop
+                } else {
+                  console.log("❌ Provisioning returned false");
+                  throw new Error("Device did not respond to provisioning");
+                }
+              } catch (e) {
+                console.error(`❌ Provisioning error (attempt ${retryCount + 1}):`, e);
+                
+                if (retryCount === maxRetries) {
+                  // Final attempt failed
+                  setStep("provisioning");
+                  setProvisionStatus("error");
+                  
+                  // Provide more specific error handling
+                  const errorMessage = e instanceof Error ? e.message : String(e);
+                  if (errorMessage.includes('timeout')) {
+                    handleError("Connection timeout - please ensure your device is nearby and try again");
+                  } else if (errorMessage.includes('not found')) {
+                    handleError("Device not found - please restart your PantrySense Hub and try again");
+                  } else if (errorMessage.includes('permission')) {
+                    handleError("Bluetooth permission issue - please check app permissions in settings");
+                  } else if (errorMessage.includes('write failed')) {
+                    handleError("Write operation failed - please ensure your device is in range and try again. If the problem persists, restart your PantrySense Hub.");
+                  } else if (errorMessage.includes('not connected')) {
+                    handleError("Device connection lost - please reconnect to your device and try again");
+                  } else if (errorMessage.includes('already configured')) {
+                    handleError("Your PantrySense Hub is already configured! To reconfigure WiFi, please:\n\n1. Unplug your PantrySense Hub\n2. Wait 10 seconds\n3. Plug it back in\n4. Try connecting again");
+                  } else if (errorMessage.includes('does not have provisioning service')) {
+                    handleError("Your PantrySense Hub is not in setup mode. Please:\n\n1. Unplug your PantrySense Hub\n2. Wait 10 seconds\n3. Plug it back in\n4. Try connecting again");
+                  } else if (errorMessage.includes('unknown configuration')) {
+                    handleError("Your PantrySense Hub has an unknown configuration. Please:\n\n1. Unplug your PantrySense Hub\n2. Wait 10 seconds\n3. Plug it back in\n4. Try connecting again");
+                  } else {
+                    handleError(`WiFi Provisioning Failed: ${errorMessage}`);
+                  }
+                  break;
+                } else {
+                  // Wait before retry
+                  console.log(`⏳ Waiting 3 seconds before retry...`);
+                  await new Promise(resolve => setTimeout(resolve, 3000));
+                  retryCount++;
+                }
+              }
             }
+            
+            setWifiLoading(false);
           }}
         />
       </>

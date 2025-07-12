@@ -166,6 +166,14 @@ export function ErrorDrawerModal({
   const slideAnim = React.useRef(new Animated.Value(0)).current;
   const screenHeight = Dimensions.get('window').height;
 
+  // Move interpolation to useMemo to prevent calculation during render
+  const translateY = React.useMemo(() => {
+    return slideAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [screenHeight, 0],
+    });
+  }, [slideAnim, screenHeight]);
+
   React.useEffect(() => {
     if (visible) {
       Animated.timing(slideAnim, {
@@ -180,14 +188,9 @@ export function ErrorDrawerModal({
         useNativeDriver: true,
       }).start();
     }
-  }, [visible]);
+  }, [visible, slideAnim]);
 
   if (!error) return null;
-
-  const translateY = slideAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [screenHeight, 0],
-  });
 
   return (
     <Modal

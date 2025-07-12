@@ -8,6 +8,14 @@ const ConnectionLoadingScreen = ({ onCancel }: { onCancel: () => void }) => {
   const [dots, setDots] = useState("");
   const rotateAnim = useRef(new Animated.Value(0)).current;
 
+  // Move interpolation to useMemo to prevent calculation during render
+  const spin = React.useMemo(() => {
+    return rotateAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['0deg', '360deg'],
+    });
+  }, [rotateAnim]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setDots(prev => prev.length >= 3 ? "" : prev + ".");
@@ -28,12 +36,7 @@ const ConnectionLoadingScreen = ({ onCancel }: { onCancel: () => void }) => {
       clearInterval(interval);
       rotateAnimation.stop();
     };
-  }, []);
-
-  const spin = rotateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
+  }, [rotateAnim]);
 
   return (
     <View className="flex-1 justify-center items-center px-6">
@@ -166,20 +169,20 @@ const ConnectionErrorScreen = ({
               Troubleshooting Tips
             </ThemedText>
           </View>
-          <View className="space-y-2">
+          <View>
             {[
               "Check if the Hub's LED is blinking",
               "Ensure you're within 10 feet of the device",
               "Try restarting the Hub and scan again",
             ].map((tip, index) => (
-              <View key={index} className="flex-row items-start">
+              <View key={index} className="flex-row items-start mb-2 last:mb-0">
                 <Ionicons
                   name="checkmark-circle"
                   size={14}
                   color="#8fb716"
-                  className="mr-2 mt-0.5"
+                  style={{ marginRight: 8, marginTop: 2 }}
                 />
-                <ThemedText size="sm" variant="secondary" className="flex-1">
+                <ThemedText size="sm" variant="secondary" className="flex-1 leading-5">
                   {tip}
                 </ThemedText>
               </View>
