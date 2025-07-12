@@ -154,23 +154,41 @@ export function useBLE() {
     const start = Date.now();
     let lastError = null;
     let attempt = 1;
+    
     while (Date.now() - start < timeoutMs) {
       try {
         stopScan();
         // Let BLE stack settle
-        await new Promise(res => setTimeout(res, 300));
+        await new Promise(res => setTimeout(res, 500));
         console.log(`🔗 [Attempt ${attempt}] Connecting to device ${deviceId}...`);
-        const device = await manager.connectToDevice(deviceId, { timeout: 8000 });
+        
+        // Increase individual connection timeout to 15 seconds
+        const device = await manager.connectToDevice(deviceId, { timeout: 15000 });
         await device.discoverAllServicesAndCharacteristics();
         setSelectedDevice(device);
         console.log(`✅ [Attempt ${attempt}] Connected to device ${deviceId}`);
         return device;
+        
       } catch (error) {
         lastError = error;
         const errorMsg = error?.message || error?.toString();
         console.log(`❌ [Attempt ${attempt}] Connection error:`, errorMsg, error);
-        // Only retry if the error is a disconnection error
-        if (errorMsg && errorMsg.includes('was disconnected')) {
+        
+        // Retry on various connection-related errors
+        const retryableErrors = [
+          'was disconnected',
+          'timeout',
+          'timed out',
+          'connection failed',
+          'device not found',
+          'operation was cancelled'
+        ];
+        
+        const shouldRetry = retryableErrors.some(retryableError => 
+          errorMsg.toLowerCase().includes(retryableError.toLowerCase())
+        );
+        
+        if (shouldRetry) {
           if (Date.now() - start + intervalMs > timeoutMs) break; // Don't overshoot timeout
           console.log(`🔁 Retrying connection to device ${deviceId} after ${intervalMs}ms...`);
           await new Promise(res => setTimeout(res, intervalMs));
@@ -178,6 +196,7 @@ export function useBLE() {
           continue;
         } else {
           // For other errors, do not retry
+          console.log(`❌ Non-retryable error: ${errorMsg}`);
           break;
         }
       }

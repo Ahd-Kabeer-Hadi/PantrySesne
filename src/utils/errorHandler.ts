@@ -131,6 +131,10 @@ const ERROR_PATTERNS = [
   { pattern: /invalid.*password|wrong.*password/i, code: 'INVALID_CREDENTIALS' },
   { pattern: /network.*unavailable|wifi.*unavailable/i, code: 'NETWORK_UNAVAILABLE' },
   { pattern: /bluetooth.*not.*supported|ble.*not.*supported/i, code: 'BLUETOOTH_NOT_SUPPORTED' },
+  { pattern: /connection.*timeout.*device.*may.*be.*out.*of.*range/i, code: 'CONNECTION_TIMEOUT' },
+  { pattern: /device.*not.*found.*please.*ensure.*device.*is.*powered/i, code: 'DEVICE_NOT_FOUND' },
+  { pattern: /bluetooth.*permission.*issue.*please.*check.*app.*permissions/i, code: 'BLUETOOTH_PERMISSION_DENIED' },
+  { pattern: /wifi.*provisioning.*failed.*device.*did.*not.*respond/i, code: 'PROVISIONING_FAILED' },
 ];
 
 export function parseError(error: string | Error): AppError {
